@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Database, Calculator, MapPin, Save, Plus, Trash2, Edit3, RefreshCw, Users, BarChart3 } from 'lucide-react';
+import { Settings, Database, Calculator, MapPin, Save, Plus, Trash2, Edit3, RefreshCw, Users, BarChart3, ArrowLeft, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminPanel = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('model');
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   // Model Coefficients State
   const [modelCoefficients, setModelCoefficients] = useState({
@@ -34,20 +35,49 @@ const AdminPanel = () => {
       "Matale": ["Matale", "Dambulla", "Sigiriya", "Galewela", "Ukuwela"],
       "Nuwara Eliya": ["Nuwara Eliya", "Hatton", "Talawakelle", "Haputale", "Bandarawela"],
     },
-    "Western Province": {
-      "Colombo": ["Colombo", "Dehiwala-Mount Lavinia", "Mount Lavinia", "Sri Jayewardenepura Kotte", "Moratuwa"],
-      "Gampaha": ["Gampaha", "Negombo", "Kelaniya", "Kadawatha", "Ja-Ela"],
-      "Kalutara": ["Kalutara", "Panadura", "Horana", "Beruwala", "Aluthgama"],
+    "Eastern Province": {
+      "Ampara": ["Ampara", "Kalmunai", "Sainthamaruthu", "Akkaraipattu", "Pottuvil"],
+      "Batticaloa": ["Batticaloa", "Kattankudy", "Eravur", "Vakarai", "Valaichchenai"],
+      "Trincomalee": ["Trincomalee", "Nilaveli", "Kinniya", "Mutur", "Kuchchaveli"],
+    },
+    "North Central Province": {
+      "Anuradhapura": ["Anuradhapura", "Mihintale", "Kekirawa", "Eppawala", "Thambuttegama"],
+      "Polonnaruwa": ["Polonnaruwa", "Kaduruwela", "Hingurakgoda", "Medirigiriya", "Bakamuna"],
+    },
+    "Northern Province": {
+      "Jaffna": ["Jaffna", "Nallur", "Chavakachcheri", "Point Pedro", "Velanai"],
+      "Kilinochchi": ["Kilinochchi", "Paranthan", "Poonakari", "Pallai"],
+      "Mannar": ["Mannar", "Talaimannar", "Nanattan", "Adampan"],
+      "Mullaitivu": ["Mullaitivu", "Puthukkudiyiruppu", "Oddusuddan", "Mankulam"],
+      "Vavuniya": ["Vavuniya", "Cheddikulam", "Settikulam", "Nedunkeni"],
+    },
+    "North Western Province": {
+      "Kurunegala": ["Kurunegala", "Kuliyapitiya", "Pannala", "Narammala", "Wariyapola"],
+      "Puttalam": ["Puttalam", "Chilaw", "Wennappuwa", "Marawila", "Kalpitiya"],
+    },
+    "Sabaragamuwa Province": {
+      "Kegalle": ["Kegalle", "Mawanella", "Ruwanwella", "Warakapola", "Dehiowita"],
+      "Ratnapura": ["Ratnapura", "Balangoda", "Embilipitiya", "Pelmadulla", "Kuruwita"],
     },
     "Southern Province": {
       "Galle": ["Galle", "Hikkaduwa", "Ambalangoda", "Bentota", "Elpitiya"],
       "Hambantota": ["Hambantota", "Tissamaharama", "Tangalle", "Ambalantota", "Beliatta"],
       "Matara": ["Matara", "Weligama", "Mirissa", "Akuressa", "Dickwella"],
-    }
+    },
+    "Uva Province": {
+      "Badulla": ["Badulla", "Bandarawela", "Haputale", "Welimada", "Mahiyanganaya"],
+      "Monaragala": ["Monaragala", "Wellawaya", "Bibile", "Kataragama", "Buttala"],
+    },
+    "Western Province": {
+      "Colombo": ["Colombo", "Dehiwala-Mount Lavinia", "Mount Lavinia", "Sri Jayewardenepura Kotte", "Moratuwa"],
+      "Gampaha": ["Gampaha", "Negombo", "Kelaniya", "Kadawatha", "Ja-Ela"],
+      "Kalutara": ["Kalutara", "Panadura", "Horana", "Beruwala", "Aluthgama"],
+    },
   };
 
   const [newVariable, setNewVariable] = useState({ name: '', unit: '', description: '' });
   const [showAddVariable, setShowAddVariable] = useState(false);
+  const [savedData, setSavedData] = useState([]);
 
   useEffect(() => {
     // Load location-specific data when location changes
@@ -62,11 +92,6 @@ const AdminPanel = () => {
       });
     }
   }, [selectedLocation]);
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    // Login functionality removed - direct access
-  };
 
   const handleCoefficientChange = (key, value) => {
     setModelCoefficients(prev => ({
@@ -92,13 +117,33 @@ const AdminPanel = () => {
   };
 
   const deleteVariable = (id) => {
-    if (confirm('Are you sure you want to delete this variable?')) {
+    if (window.confirm('Are you sure you want to delete this variable?')) {
       setVariables(prev => prev.filter(v => v.id !== id));
       setLocationVariables(prev => {
         const updated = { ...prev };
         delete updated[id];
         return updated;
       });
+    }
+  };
+
+  const editVariable = (id) => {
+    const variable = variables.find(v => v.id === id);
+    if (variable) {
+      setNewVariable({ ...variable });
+      setEditingLocation(id);
+      setShowAddVariable(true);
+    }
+  };
+
+  const updateVariable = () => {
+    if (newVariable.name && newVariable.unit && editingLocation) {
+      setVariables(prev => prev.map(v => 
+        v.id === editingLocation ? { ...newVariable, id: editingLocation } : v
+      ));
+      setNewVariable({ name: '', unit: '', description: '' });
+      setShowAddVariable(false);
+      setEditingLocation(null);
     }
   };
 
@@ -113,19 +158,28 @@ const AdminPanel = () => {
   };
 
   const saveData = async () => {
-    // In real app, save to backend API
-    console.log('Saving data:', {
+    const newData = {
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
       modelCoefficients,
       variables,
       locationVariables,
-      selectedLocation
-    });
+      selectedLocation,
+      calculatedPVOUT: selectedLocation.city ? calculatePVOUT() : null
+    };
+
+    setSavedData(prev => [newData, ...prev]);
+    
+    // In real app, save to backend API
+    console.log('Saving data:', newData);
     alert('Data saved successfully!');
   };
 
-  if (!isAuthenticated) {
-    return null; // No login screen needed
-  }
+  const deleteRecord = (id) => {
+    if (window.confirm('Are you sure you want to delete this record?')) {
+      setSavedData(prev => prev.filter(record => record.id !== id));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
@@ -143,10 +197,11 @@ const AdminPanel = () => {
               </div>
             </div>
             <button
-              onClick={() => window.location.href = '/'}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+              onClick={() => navigate('/')}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center space-x-2"
             >
-              Back to Calculator
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Calculator</span>
             </button>
           </div>
         </div>
@@ -154,17 +209,18 @@ const AdminPanel = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Navigation Tabs */}
-        <div className="flex space-x-1 mb-8 bg-gray-800 bg-opacity-50 rounded-xl p-1">
+        <div className="flex space-x-1 mb-8 bg-gray-800 bg-opacity-50 rounded-xl p-1 overflow-x-auto">
           {[
             { id: 'model', label: 'Model Coefficients', icon: Calculator },
             { id: 'variables', label: 'Variables', icon: Database },
             { id: 'locations', label: 'Location Data', icon: MapPin },
-            { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+            { id: 'records', label: 'Saved Records', icon: Users }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all ${
+              className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'text-gray-300 hover:text-white hover:bg-gray-700'
@@ -253,7 +309,7 @@ const AdminPanel = () => {
               {/* Model Preview */}
               <div className="mt-8 p-6 bg-gray-800 bg-opacity-50 rounded-xl border border-gray-600">
                 <h3 className="text-xl font-semibold mb-4">Current Model Formula</h3>
-                <div className="font-mono text-lg text-green-400 bg-gray-900 p-4 rounded-lg">
+                <div className="font-mono text-lg text-green-400 bg-gray-900 p-4 rounded-lg overflow-x-auto">
                   PVOUT = {modelCoefficients.beta0} + ({modelCoefficients.beta1} × Solar Irradiance) + ({modelCoefficients.beta2} × Temperature) + ({modelCoefficients.beta3} × Humidity) + ({modelCoefficients.beta4} × Cloud Cover) + {modelCoefficients.epsilon}
                 </div>
               </div>
@@ -268,7 +324,11 @@ const AdminPanel = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">Manage Variables</h2>
                 <button
-                  onClick={() => setShowAddVariable(true)}
+                  onClick={() => {
+                    setShowAddVariable(true);
+                    setEditingLocation(null);
+                    setNewVariable({ name: '', unit: '', description: '' });
+                  }}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
                 >
                   <Plus className="w-5 h-5" />
@@ -278,7 +338,21 @@ const AdminPanel = () => {
 
               {showAddVariable && (
                 <div className="mb-6 p-6 bg-gray-800 bg-opacity-50 rounded-xl border border-gray-600">
-                  <h3 className="text-lg font-semibold mb-4">Add New Variable</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">
+                      {editingLocation ? 'Edit Variable' : 'Add New Variable'}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowAddVariable(false);
+                        setEditingLocation(null);
+                        setNewVariable({ name: '', unit: '', description: '' });
+                      }}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <input
                       type="text"
@@ -304,13 +378,17 @@ const AdminPanel = () => {
                   </div>
                   <div className="flex space-x-4 mt-4">
                     <button
-                      onClick={addVariable}
+                      onClick={editingLocation ? updateVariable : addVariable}
                       className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
                     >
-                      Add Variable
+                      {editingLocation ? 'Update Variable' : 'Add Variable'}
                     </button>
                     <button
-                      onClick={() => setShowAddVariable(false)}
+                      onClick={() => {
+                        setShowAddVariable(false);
+                        setEditingLocation(null);
+                        setNewVariable({ name: '', unit: '', description: '' });
+                      }}
                       className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors"
                     >
                       Cancel
@@ -324,12 +402,20 @@ const AdminPanel = () => {
                   <div key={variable.id} className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-semibold text-white">{variable.name}</h3>
-                      <button
-                        onClick={() => deleteVariable(variable.id)}
-                        className="text-red-300 hover:text-red-100 transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => editVariable(variable.id)}
+                          className="text-blue-300 hover:text-blue-100 transition-colors"
+                        >
+                          <Edit3 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => deleteVariable(variable.id)}
+                          className="text-red-300 hover:text-red-100 transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                     <p className="text-white text-opacity-80 mb-2">Unit: {variable.unit}</p>
                     <p className="text-white text-opacity-70 text-sm">{variable.description}</p>
@@ -464,10 +550,10 @@ const AdminPanel = () => {
                 <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white">
                   <div className="flex items-center justify-between mb-4">
                     <MapPin className="w-8 h-8" />
-                    <span className="text-2xl font-bold">156</span>
+                    <span className="text-2xl font-bold">{savedData.length}</span>
                   </div>
-                  <h4 className="font-semibold mb-1">Covered Cities</h4>
-                  <p className="text-sm opacity-90">Across Sri Lanka</p>
+                  <h4 className="font-semibold mb-1">Saved Records</h4>
+                  <p className="text-sm opacity-90">Total entries</p>
                 </div>
               </div>
 
@@ -486,6 +572,88 @@ const AdminPanel = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Saved Records Tab */}
+        {activeTab === 'records' && (
+          <div className="space-y-8">
+            <div className="bg-black bg-opacity-40 backdrop-blur-lg rounded-2xl border border-gray-700 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Saved Records</h2>
+                <div className="text-sm text-gray-400">
+                  {savedData.length} total records
+                </div>
+              </div>
+
+              {savedData.length === 0 ? (
+                <div className="text-center py-12">
+                  <Database className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-400 mb-2">No records found</h3>
+                  <p className="text-gray-500">Save some data to see records here</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {savedData.map((record) => (
+                    <div key={record.id} className="bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-gray-600">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            {record.selectedLocation.city ? 
+                              `${record.selectedLocation.city}, ${record.selectedLocation.district}` : 
+                              'Model Configuration'
+                            }
+                          </h3>
+                          <p className="text-gray-400 text-sm">
+                            Saved on {new Date(record.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {record.calculatedPVOUT && (
+                            <div className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-semibold">
+                              PVOUT: {record.calculatedPVOUT.toFixed(3)}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => deleteRecord(record.id)}
+                            className="text-red-400 hover:text-red-300 p-2 hover:bg-red-900 hover:bg-opacity-30 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <h4 className="font-semibold text-gray-300 mb-2">Model Coefficients</h4>
+                          <div className="space-y-1 text-gray-400">
+                            <p>β₀: {record.modelCoefficients.beta0}</p>
+                            <p>β₁: {record.modelCoefficients.beta1}</p>
+                            <p>β₂: {record.modelCoefficients.beta2}</p>
+                            <p>β₃: {record.modelCoefficients.beta3}</p>
+                            <p>β₄: {record.modelCoefficients.beta4}</p>
+                            <p>ε: {record.modelCoefficients.epsilon}</p>
+                          </div>
+                        </div>
+                        
+                        {record.selectedLocation.city && (
+                          <div>
+                            <h4 className="font-semibold text-gray-300 mb-2">Location Variables</h4>
+                            <div className="space-y-1 text-gray-400">
+                              {record.variables.map(variable => (
+                                <p key={variable.id}>
+                                  {variable.name}: {record.locationVariables[variable.id]?.toFixed(2) || 'N/A'} {variable.unit}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,13 +1,17 @@
-import React from 'react';
-import AdminPanel from './pages/AdminPanel';
-import './index.css';
+import React from 'react'
+import { Routes, Route } from 'react-router-dom'
+import AdminPanel from './pages/AdminPanel'
+import Calculator from './pages/Calculator'
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <AdminPanel />
+    <div>
+      <Routes>
+        <Route path="/" element={<Calculator />} />
+        <Route path="/admin" element={<AdminPanel />} />
+      </Routes>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
