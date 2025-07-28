@@ -1,48 +1,48 @@
-// routes/variables.js
+// routes/solarPanels.js
 const express = require('express');
 const router = express.Router();
-const Variable = require('../models/Variable');
+const SolarPanel = require('../models/SolarPanel');
 
-// Get all active variables
+// Get all active solar panels
 router.get('/', async (req, res) => {
   try {
-    const variables = await Variable.find({ isActive: true });
-    res.json(variables);
+    const solarPanels = await SolarPanel.find({ isActive: true });
+    res.json(solarPanels);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Create new variable
+// Create new solar panel
 router.post('/', async (req, res) => {
   try {
-    const variable = new Variable(req.body);
-    await variable.save();
-    res.status(201).json(variable);
+    const solarPanel = new SolarPanel(req.body);
+    await solarPanel.save();
+    res.status(201).json(solarPanel);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Update variable
+// Update solar panel
 router.put('/:id', async (req, res) => {
   try {
-    const variable = await Variable.findByIdAndUpdate(
+    const solarPanel = await SolarPanel.findByIdAndUpdate(
       req.params.id,
       { ...req.body, updatedAt: new Date() },
       { new: true }
     );
-    res.json(variable);
+    res.json(solarPanel);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Delete variable (soft delete)
+// Delete solar panel (soft delete)
 router.delete('/:id', async (req, res) => {
   try {
-    await Variable.findByIdAndUpdate(req.params.id, { isActive: false });
-    res.json({ message: 'Variable deleted successfully' });
+    await SolarPanel.findByIdAndUpdate(req.params.id, { isActive: false });
+    res.json({ message: 'Solar panel deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

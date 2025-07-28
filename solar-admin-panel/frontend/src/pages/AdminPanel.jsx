@@ -1,32 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Database, Calculator, MapPin, Save, Plus, Trash2, Edit3, RefreshCw, Users, BarChart3, ArrowLeft, X } from 'lucide-react';
+import { Settings, Database, Calculator, MapPin, Save, Plus, Trash2, Edit3, RefreshCw, Users, BarChart3, ArrowLeft, X, Zap, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('model');
+  const [loading, setLoading] = useState(false);
 
   // Model Coefficients State
   const [modelCoefficients, setModelCoefficients] = useState({
-    beta0: 2.5,    // Intercept
-    beta1: 0.8,    // Solar Irradiance coefficient
-    beta2: -0.3,   // Temperature coefficient
-    beta3: 0.6,    // Humidity coefficient
-    beta4: 0.4,    // Cloud Cover coefficient
-    epsilon: 0.1   // Error term
+    beta0: 2.5,
+    beta1: 0.8,
+    beta2: -0.3,
+    beta3: 0.6,
+    beta4: 0.4,
+    epsilon: 0.1
   });
 
   // Variables State
-  const [variables, setVariables] = useState([
-    { id: 1, name: 'Solar Irradiance', unit: 'kWh/m²/day', description: 'Average daily solar irradiance' },
-    { id: 2, name: 'Temperature', unit: '°C', description: 'Average ambient temperature' },
-    { id: 3, name: 'Humidity', unit: '%', description: 'Relative humidity percentage' },
-    { id: 4, name: 'Cloud Cover', unit: '%', description: 'Average cloud cover percentage' }
-  ]);
+  const [variables, setVariables] = useState([]);
+  const [newVariable, setNewVariable] = useState({ name: '', unit: '', description: '' });
+  const [showAddVariable, setShowAddVariable] = useState(false);
+  const [editingVariable, setEditingVariable] = useState(null);
+
+  // Solar Panels State
+  const [solarPanels, setSolarPanels] = useState([]);
+  const [newSolarPanel, setNewSolarPanel] = useState({
+    name: '',
+    manufacturer: '',
+    wattage: '',
+    efficiency: '',
+    absorptionRate: '',
+    area: '',
+    pricePerUnit: '',
+    warranty: 25,
+    technology: 'Monocrystalline'
+  });
+  const [showAddSolarPanel, setShowAddSolarPanel] = useState(false);
+  const [editingSolarPanel, setEditingSolarPanel] = useState(null);
 
   // Location Data State
   const [selectedLocation, setSelectedLocation] = useState({ province: '', district: '', city: '' });
   const [locationVariables, setLocationVariables] = useState({});
+  const [electricityRate, setElectricityRate] = useState(0);
   const [editingLocation, setEditingLocation] = useState(null);
 
   const locationData = {
@@ -75,24 +91,86 @@ const AdminPanel = () => {
     },
   };
 
-  const [newVariable, setNewVariable] = useState({ name: '', unit: '', description: '' });
-  const [showAddVariable, setShowAddVariable] = useState(false);
   const [savedData, setSavedData] = useState([]);
+  const [calculations, setCalculations] = useState([]);
+
+  // API Functions
+  const API_URL = 'http://localhost:5000/api';
+
+  const fetchModelCoefficients = async () => {
+    try {
+      const response = await fetch(`${API_URL}/model-coefficients`);
+      const data = await response.json();
+      setModelCoefficients(data);
+    } catch (error) {
+      console.error('Error fetching model coefficients:', error);
+    }
+  };
+
+  const fetchVariables = async () => {
+    try {
+      const response = await fetch(`${API_URL}/variables`);
+      const data = await response.json();
+      setVariables(data);
+    } catch (error) {
+      console.error('Error fetching variables:', error);
+    }
+  };
+
+  const fetchSolarPanels = async () => {
+    try {
+      const response = await fetch(`${API_URL}/solar-panels`);
+      const data = await response.json();
+      setSolarPanels(data);
+    } catch (error) {
+      console.error('Error fetching solar panels:', error);
+    }
+  };
+
+  const fetchLocationData = async () => {
+    if (selectedLocation.city) {
+      try {
+        const response = await fetch(`${API_URL}/locations/${selectedLocation.province}/${selectedLocation.district}/${selectedLocation.city}`);
+        if (response.ok) {
+          const data = await response.json();
+          const variableValues = {};
+          data.variables.forEach(v => {
+            variableValues[v.variableId._id] = v.value;
+          });
+          setLocationVariables(variableValues);
+          setElectricityRate(data.electricityRate || 0);
+        } else {
+          setLocationVariables({});
+          setElectricityRate(0);
+        }
+      } catch (error) {
+        console.error('Error fetching location data:', error);
+      }
+    }
+  };
+
+  const fetchCalculations = async () => {
+    try {
+      const response = await fetch(`${API_URL}/calculations`);
+      const data = await response.json();
+      setCalculations(data);
+    } catch (error) {
+      console.error('Error fetching calculations:', error);
+    }
+  };
 
   useEffect(() => {
-    // Load location-specific data when location changes
-    if (selectedLocation.city) {
-      const locationKey = `${selectedLocation.province}-${selectedLocation.district}-${selectedLocation.city}`;
-      // Mock data - in real app, fetch from API
-      setLocationVariables({
-        1: Math.random() * 2 + 4, // Solar Irradiance: 4-6
-        2: Math.random() * 10 + 25, // Temperature: 25-35°C
-        3: Math.random() * 20 + 60, // Humidity: 60-80%
-        4: Math.random() * 30 + 20  // Cloud Cover: 20-50%
-      });
-    }
+    fetchModelCoefficients();
+    fetchVariables();
+    fetchSolarPanels();
+    fetchCalculations();
+  }, []);
+
+  useEffect(() => {
+    fetchLocationData();
   }, [selectedLocation]);
 
+  // Model Coefficients Functions
   const handleCoefficientChange = (key, value) => {
     setModelCoefficients(prev => ({
       ...prev,
@@ -100,6 +178,222 @@ const AdminPanel = () => {
     }));
   };
 
+  const saveModelCoefficients = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/model-coefficients`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(modelCoefficients)
+      });
+      if (response.ok) {
+        alert('Model coefficients saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving model coefficients:', error);
+      alert('Error saving model coefficients');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Variables Functions
+  const addVariable = async () => {
+    if (newVariable.name && newVariable.unit) {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/variables`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newVariable)
+        });
+        if (response.ok) {
+          await fetchVariables();
+          setNewVariable({ name: '', unit: '', description: '' });
+          setShowAddVariable(false);
+        }
+      } catch (error) {
+        console.error('Error adding variable:', error);
+        alert('Error adding variable');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const updateVariable = async () => {
+    if (newVariable.name && newVariable.unit && editingVariable) {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/variables/${editingVariable}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newVariable)
+        });
+        if (response.ok) {
+          await fetchVariables();
+          setNewVariable({ name: '', unit: '', description: '' });
+          setShowAddVariable(false);
+          setEditingVariable(null);
+        }
+      } catch (error) {
+        console.error('Error updating variable:', error);
+        alert('Error updating variable');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const deleteVariable = async (id) => {
+    if (window.confirm('Are you sure you want to delete this variable?')) {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/variables/${id}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          await fetchVariables();
+        }
+      } catch (error) {
+        console.error('Error deleting variable:', error);
+        alert('Error deleting variable');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const editVariable = (variable) => {
+    setNewVariable({
+      name: variable.name,
+      unit: variable.unit,
+      description: variable.description
+    });
+    setEditingVariable(variable._id);
+    setShowAddVariable(true);
+  };
+
+  // Solar Panel Functions
+  const addSolarPanel = async () => {
+    if (newSolarPanel.name && newSolarPanel.manufacturer && newSolarPanel.wattage) {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/solar-panels`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...newSolarPanel,
+            wattage: parseFloat(newSolarPanel.wattage),
+            efficiency: parseFloat(newSolarPanel.efficiency),
+            absorptionRate: parseFloat(newSolarPanel.absorptionRate),
+            area: parseFloat(newSolarPanel.area),
+            pricePerUnit: parseFloat(newSolarPanel.pricePerUnit),
+            warranty: parseInt(newSolarPanel.warranty)
+          })
+        });
+        if (response.ok) {
+          await fetchSolarPanels();
+          setNewSolarPanel({
+            name: '',
+            manufacturer: '',
+            wattage: '',
+            efficiency: '',
+            absorptionRate: '',
+            area: '',
+            pricePerUnit: '',
+            warranty: 25,
+            technology: 'Monocrystalline'
+          });
+          setShowAddSolarPanel(false);
+        }
+      } catch (error) {
+        console.error('Error adding solar panel:', error);
+        alert('Error adding solar panel');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const updateSolarPanel = async () => {
+    if (newSolarPanel.name && newSolarPanel.manufacturer && editingSolarPanel) {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/solar-panels/${editingSolarPanel}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...newSolarPanel,
+            wattage: parseFloat(newSolarPanel.wattage),
+            efficiency: parseFloat(newSolarPanel.efficiency),
+            absorptionRate: parseFloat(newSolarPanel.absorptionRate),
+            area: parseFloat(newSolarPanel.area),
+            pricePerUnit: parseFloat(newSolarPanel.pricePerUnit),
+            warranty: parseInt(newSolarPanel.warranty)
+          })
+        });
+        if (response.ok) {
+          await fetchSolarPanels();
+          setNewSolarPanel({
+            name: '',
+            manufacturer: '',
+            wattage: '',
+            efficiency: '',
+            absorptionRate: '',
+            area: '',
+            pricePerUnit: '',
+            warranty: 25,
+            technology: 'Monocrystalline'
+          });
+          setShowAddSolarPanel(false);
+          setEditingSolarPanel(null);
+        }
+      } catch (error) {
+        console.error('Error updating solar panel:', error);
+        alert('Error updating solar panel');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const deleteSolarPanel = async (id) => {
+    if (window.confirm('Are you sure you want to delete this solar panel?')) {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/solar-panels/${id}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          await fetchSolarPanels();
+        }
+      } catch (error) {
+        console.error('Error deleting solar panel:', error);
+        alert('Error deleting solar panel');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const editSolarPanel = (panel) => {
+    setNewSolarPanel({
+      name: panel.name,
+      manufacturer: panel.manufacturer,
+      wattage: panel.wattage.toString(),
+      efficiency: panel.efficiency.toString(),
+      absorptionRate: panel.absorptionRate.toString(),
+      area: panel.area.toString(),
+      pricePerUnit: panel.pricePerUnit.toString(),
+      warranty: panel.warranty,
+      technology: panel.technology
+    });
+    setEditingSolarPanel(panel._id);
+    setShowAddSolarPanel(true);
+  };
+
+  // Location Functions
   const handleVariableValueChange = (variableId, value) => {
     setLocationVariables(prev => ({
       ...prev,
@@ -107,78 +401,53 @@ const AdminPanel = () => {
     }));
   };
 
-  const addVariable = () => {
-    if (newVariable.name && newVariable.unit) {
-      const newId = Math.max(...variables.map(v => v.id)) + 1;
-      setVariables(prev => [...prev, { ...newVariable, id: newId }]);
-      setNewVariable({ name: '', unit: '', description: '' });
-      setShowAddVariable(false);
+  const saveLocationData = async () => {
+    if (!selectedLocation.city) {
+      alert('Please select a location');
+      return;
     }
-  };
 
-  const deleteVariable = (id) => {
-    if (window.confirm('Are you sure you want to delete this variable?')) {
-      setVariables(prev => prev.filter(v => v.id !== id));
-      setLocationVariables(prev => {
-        const updated = { ...prev };
-        delete updated[id];
-        return updated;
+    try {
+      setLoading(true);
+      const variablesArray = Object.entries(locationVariables).map(([variableId, value]) => ({
+        variableId,
+        value: parseFloat(value) || 0
+      }));
+
+      const response = await fetch(`${API_URL}/locations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          province: selectedLocation.province,
+          district: selectedLocation.district,
+          city: selectedLocation.city,
+          variables: variablesArray,
+          electricityRate: parseFloat(electricityRate) || 0
+        })
       });
-    }
-  };
 
-  const editVariable = (id) => {
-    const variable = variables.find(v => v.id === id);
-    if (variable) {
-      setNewVariable({ ...variable });
-      setEditingLocation(id);
-      setShowAddVariable(true);
-    }
-  };
-
-  const updateVariable = () => {
-    if (newVariable.name && newVariable.unit && editingLocation) {
-      setVariables(prev => prev.map(v => 
-        v.id === editingLocation ? { ...newVariable, id: editingLocation } : v
-      ));
-      setNewVariable({ name: '', unit: '', description: '' });
-      setShowAddVariable(false);
-      setEditingLocation(null);
+      if (response.ok) {
+        alert('Location data saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving location data:', error);
+      alert('Error saving location data');
+    } finally {
+      setLoading(false);
     }
   };
 
   const calculatePVOUT = () => {
     const { beta0, beta1, beta2, beta3, beta4, epsilon } = modelCoefficients;
-    const x1 = locationVariables[1] || 0; // Solar Irradiance
-    const x2 = locationVariables[2] || 0; // Temperature
-    const x3 = locationVariables[3] || 0; // Humidity
-    const x4 = locationVariables[4] || 0; // Cloud Cover
-
-    return beta0 + (beta1 * x1) + (beta2 * x2) + (beta3 * x3) + (beta4 * x4) + epsilon;
-  };
-
-  const saveData = async () => {
-    const newData = {
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      modelCoefficients,
-      variables,
-      locationVariables,
-      selectedLocation,
-      calculatedPVOUT: selectedLocation.city ? calculatePVOUT() : null
-    };
-
-    setSavedData(prev => [newData, ...prev]);
+    const variableValues = Object.values(locationVariables);
     
-    // In real app, save to backend API
-    console.log('Saving data:', newData);
-    alert('Data saved successfully!');
-  };
-
-  const deleteRecord = (id) => {
-    if (window.confirm('Are you sure you want to delete this record?')) {
-      setSavedData(prev => prev.filter(record => record.id !== id));
-    }
+    let result = beta0 + epsilon;
+    if (variableValues[0]) result += beta1 * variableValues[0];
+    if (variableValues[1]) result += beta2 * variableValues[1];
+    if (variableValues[2]) result += beta3 * variableValues[2];
+    if (variableValues[3]) result += beta4 * variableValues[3];
+    
+    return result;
   };
 
   return (
@@ -193,7 +462,7 @@ const AdminPanel = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Solar Energy Admin Panel</h1>
-                <p className="text-gray-300 text-sm">Manage model coefficients and location data</p>
+                <p className="text-gray-300 text-sm">Manage model coefficients, variables, and solar panels</p>
               </div>
             </div>
             <button
@@ -213,9 +482,10 @@ const AdminPanel = () => {
           {[
             { id: 'model', label: 'Model Coefficients', icon: Calculator },
             { id: 'variables', label: 'Variables', icon: Database },
+            { id: 'solar-panels', label: 'Solar Panels', icon: Zap },
             { id: 'locations', label: 'Location Data', icon: MapPin },
             { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-            { id: 'records', label: 'Saved Records', icon: Users }
+            { id: 'calculations', label: 'Calculations', icon: Users }
           ].map(tab => (
             <button
               key={tab.id}
@@ -251,7 +521,7 @@ const AdminPanel = () => {
                 </div>
 
                 <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl p-6">
-                  <label className="block text-white font-medium mb-3">β₁ (Solar Irradiance)</label>
+                  <label className="block text-white font-medium mb-3">β₁ (Variable 1)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -262,7 +532,7 @@ const AdminPanel = () => {
                 </div>
 
                 <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-xl p-6">
-                  <label className="block text-white font-medium mb-3">β₂ (Temperature)</label>
+                  <label className="block text-white font-medium mb-3">β₂ (Variable 2)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -273,7 +543,7 @@ const AdminPanel = () => {
                 </div>
 
                 <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-xl p-6">
-                  <label className="block text-white font-medium mb-3">β₃ (Humidity)</label>
+                  <label className="block text-white font-medium mb-3">β₃ (Variable 3)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -284,7 +554,7 @@ const AdminPanel = () => {
                 </div>
 
                 <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6">
-                  <label className="block text-white font-medium mb-3">β₄ (Cloud Cover)</label>
+                  <label className="block text-white font-medium mb-3">β₄ (Variable 4)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -306,12 +576,15 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              {/* Model Preview */}
-              <div className="mt-8 p-6 bg-gray-800 bg-opacity-50 rounded-xl border border-gray-600">
-                <h3 className="text-xl font-semibold mb-4">Current Model Formula</h3>
-                <div className="font-mono text-lg text-green-400 bg-gray-900 p-4 rounded-lg overflow-x-auto">
-                  PVOUT = {modelCoefficients.beta0} + ({modelCoefficients.beta1} × Solar Irradiance) + ({modelCoefficients.beta2} × Temperature) + ({modelCoefficients.beta3} × Humidity) + ({modelCoefficients.beta4} × Cloud Cover) + {modelCoefficients.epsilon}
-                </div>
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={saveModelCoefficients}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
+                >
+                  <Save className="w-5 h-5" />
+                  <span>{loading ? 'Saving...' : 'Save Coefficients'}</span>
+                </button>
               </div>
             </div>
           </div>
@@ -326,7 +599,7 @@ const AdminPanel = () => {
                 <button
                   onClick={() => {
                     setShowAddVariable(true);
-                    setEditingLocation(null);
+                    setEditingVariable(null);
                     setNewVariable({ name: '', unit: '', description: '' });
                   }}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
@@ -340,12 +613,12 @@ const AdminPanel = () => {
                 <div className="mb-6 p-6 bg-gray-800 bg-opacity-50 rounded-xl border border-gray-600">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold">
-                      {editingLocation ? 'Edit Variable' : 'Add New Variable'}
+                      {editingVariable ? 'Edit Variable' : 'Add New Variable'}
                     </h3>
                     <button
                       onClick={() => {
                         setShowAddVariable(false);
-                        setEditingLocation(null);
+                        setEditingVariable(null);
                         setNewVariable({ name: '', unit: '', description: '' });
                       }}
                       className="text-gray-400 hover:text-white"
@@ -378,15 +651,16 @@ const AdminPanel = () => {
                   </div>
                   <div className="flex space-x-4 mt-4">
                     <button
-                      onClick={editingLocation ? updateVariable : addVariable}
-                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
+                      onClick={editingVariable ? updateVariable : addVariable}
+                      disabled={loading}
+                      className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg transition-colors"
                     >
-                      {editingLocation ? 'Update Variable' : 'Add Variable'}
+                      {loading ? 'Saving...' : (editingVariable ? 'Update Variable' : 'Add Variable')}
                     </button>
                     <button
                       onClick={() => {
                         setShowAddVariable(false);
-                        setEditingLocation(null);
+                        setEditingVariable(null);
                         setNewVariable({ name: '', unit: '', description: '' });
                       }}
                       className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors"
@@ -399,18 +673,18 @@ const AdminPanel = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {variables.map((variable) => (
-                  <div key={variable.id} className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-6">
+                  <div key={variable._id} className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-semibold text-white">{variable.name}</h3>
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => editVariable(variable.id)}
+                          onClick={() => editVariable(variable)}
                           className="text-blue-300 hover:text-blue-100 transition-colors"
                         >
                           <Edit3 className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => deleteVariable(variable.id)}
+                          onClick={() => deleteVariable(variable._id)}
                           className="text-red-300 hover:text-red-100 transition-colors"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -419,6 +693,199 @@ const AdminPanel = () => {
                     </div>
                     <p className="text-white text-opacity-80 mb-2">Unit: {variable.unit}</p>
                     <p className="text-white text-opacity-70 text-sm">{variable.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Solar Panels Tab */}
+        {activeTab === 'solar-panels' && (
+          <div className="space-y-8">
+            <div className="bg-black bg-opacity-40 backdrop-blur-lg rounded-2xl border border-gray-700 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Manage Solar Panels</h2>
+                <button
+                  onClick={() => {
+                    setShowAddSolarPanel(true);
+                    setEditingSolarPanel(null);
+                    setNewSolarPanel({
+                      name: '',
+                      manufacturer: '',
+                      wattage: '',
+                      efficiency: '',
+                      absorptionRate: '',
+                      area: '',
+                      pricePerUnit: '',
+                      warranty: 25,
+                      technology: 'Monocrystalline'
+                    });
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Add Solar Panel</span>
+                </button>
+              </div>
+
+              {showAddSolarPanel && (
+                <div className="mb-6 p-6 bg-gray-800 bg-opacity-50 rounded-xl border border-gray-600">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">
+                      {editingSolarPanel ? 'Edit Solar Panel' : 'Add New Solar Panel'}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowAddSolarPanel(false);
+                        setEditingSolarPanel(null);
+                      }}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Panel name"
+                      value={newSolarPanel.name}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, name: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Manufacturer"
+                      value={newSolarPanel.manufacturer}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, manufacturer: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Wattage (W)"
+                      value={newSolarPanel.wattage}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, wattage: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Efficiency (%)"
+                      value={newSolarPanel.efficiency}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, efficiency: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Absorption Rate (%)"
+                      value={newSolarPanel.absorptionRate}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, absorptionRate: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Area (m²)"
+                      value={newSolarPanel.area}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, area: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Price per unit"
+                      value={newSolarPanel.pricePerUnit}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, pricePerUnit: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Warranty (years)"
+                      value={newSolarPanel.warranty}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, warranty: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <select
+                      value={newSolarPanel.technology}
+                      onChange={(e) => setNewSolarPanel(prev => ({ ...prev, technology: e.target.value }))}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Monocrystalline">Monocrystalline</option>
+                      <option value="Polycrystalline">Polycrystalline</option>
+                      <option value="Thin Film">Thin Film</option>
+                      <option value="Bifacial">Bifacial</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex space-x-4 mt-4">
+                    <button
+                      onClick={editingSolarPanel ? updateSolarPanel : addSolarPanel}
+                      disabled={loading}
+                      className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg transition-colors"
+                    >
+                      {loading ? 'Saving...' : (editingSolarPanel ? 'Update Panel' : 'Add Panel')}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddSolarPanel(false);
+                        setEditingSolarPanel(null);
+                      }}
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {solarPanels.map((panel) => (
+                  <div key={panel._id} className="bg-gradient-to-br from-orange-600 to-red-600 rounded-xl p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-6 h-6" />
+                        <h3 className="text-xl font-semibold">{panel.name}</h3>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => editSolarPanel(panel)}
+                          className="text-orange-300 hover:text-orange-100 transition-colors"
+                        >
+                          <Edit3 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => deleteSolarPanel(panel._id)}
+                          className="text-red-300 hover:text-red-100 transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Manufacturer:</span> {panel.manufacturer}
+                      </p>
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Technology:</span> {panel.technology}
+                      </p>
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Wattage:</span> {panel.wattage}W
+                      </p>
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Efficiency:</span> {panel.efficiency}%
+                      </p>
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Absorption Rate:</span> {panel.absorptionRate}%
+                      </p>
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Area:</span> {panel.area}m²
+                      </p>
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Price:</span> ${panel.pricePerUnit}
+                      </p>
+                      <p className="text-white text-opacity-90">
+                        <span className="font-medium">Warranty:</span> {panel.warranty} years
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -487,34 +954,64 @@ const AdminPanel = () => {
                     Variable Values for {selectedLocation.city}, {selectedLocation.district}
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     {variables.map((variable) => (
-                      <div key={variable.id} className="bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-gray-600">
+                      <div key={variable._id} className="bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-gray-600">
                         <label className="block text-white font-medium mb-3">
                           {variable.name} ({variable.unit})
                         </label>
                         <input
                           type="number"
                           step="0.01"
-                          value={locationVariables[variable.id] || ''}
-                          onChange={(e) => handleVariableValueChange(variable.id, e.target.value)}
+                          value={locationVariables[variable._id] || ''}
+                          onChange={(e) => handleVariableValueChange(variable._id, e.target.value)}
                           className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
                           placeholder={`Enter ${variable.name.toLowerCase()}`}
                         />
                         <p className="text-gray-400 text-sm mt-2">{variable.description}</p>
                       </div>
                     ))}
+                    
+                    {/* Electricity Rate */}
+                    <div className="bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-gray-600">
+                      <label className="block text-white font-medium mb-3">
+                        <DollarSign className="w-5 h-5 inline mr-2" />
+                        Electricity Rate (per kWh)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={electricityRate}
+                        onChange={(e) => setElectricityRate(e.target.value)}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter electricity rate"
+                      />
+                      <p className="text-gray-400 text-sm mt-2">Rate per unit of electricity in local currency</p>
+                    </div>
                   </div>
 
                   {/* PVOUT Calculation */}
-                  <div className="bg-gradient-to-br from-green-600 to-teal-600 rounded-xl p-6">
-                    <h4 className="text-xl font-semibold text-white mb-4">Calculated PVOUT</h4>
-                    <div className="text-3xl font-bold text-white mb-2">
-                      {calculatePVOUT().toFixed(3)} kWh/m²/day
+                  {Object.keys(locationVariables).length > 0 && (
+                    <div className="bg-gradient-to-br from-green-600 to-teal-600 rounded-xl p-6 mb-6">
+                      <h4 className="text-xl font-semibold text-white mb-4">Calculated PVOUT</h4>
+                      <div className="text-3xl font-bold text-white mb-2">
+                        {calculatePVOUT().toFixed(3)} kWh/m²/day
+                      </div>
+                      <p className="text-white text-opacity-80">
+                        Based on current model coefficients and location variables
+                      </p>
                     </div>
-                    <p className="text-white text-opacity-80">
-                      Based on current model coefficients and location variables
-                    </p>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={saveLocationData}
+                      disabled={loading}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
+                    >
+                      <Save className="w-5 h-5" />
+                      <span>{loading ? 'Saving...' : 'Save Location Data'}</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -528,14 +1025,14 @@ const AdminPanel = () => {
             <div className="bg-black bg-opacity-40 backdrop-blur-lg rounded-2xl border border-gray-700 p-8">
               <h2 className="text-2xl font-bold mb-6">System Analytics</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-6 text-white">
                   <div className="flex items-center justify-between mb-4">
-                    <Users className="w-8 h-8" />
-                    <span className="text-2xl font-bold">1,247</span>
+                    <Calculator className="w-8 h-8" />
+                    <span className="text-2xl font-bold">{calculations.length}</span>
                   </div>
                   <h4 className="font-semibold mb-1">Total Calculations</h4>
-                  <p className="text-sm opacity-90">This month</p>
+                  <p className="text-sm opacity-90">All time</p>
                 </div>
 
                 <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-xl p-6 text-white">
@@ -549,11 +1046,20 @@ const AdminPanel = () => {
 
                 <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white">
                   <div className="flex items-center justify-between mb-4">
-                    <MapPin className="w-8 h-8" />
-                    <span className="text-2xl font-bold">{savedData.length}</span>
+                    <Zap className="w-8 h-8" />
+                    <span className="text-2xl font-bold">{solarPanels.length}</span>
                   </div>
-                  <h4 className="font-semibold mb-1">Saved Records</h4>
-                  <p className="text-sm opacity-90">Total entries</p>
+                  <h4 className="font-semibold mb-1">Solar Panels</h4>
+                  <p className="text-sm opacity-90">Available types</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <MapPin className="w-8 h-8" />
+                    <span className="text-2xl font-bold">89</span>
+                  </div>
+                  <h4 className="font-semibold mb-1">Active Locations</h4>
+                  <p className="text-sm opacity-90">With data</p>
                 </div>
               </div>
 
@@ -567,8 +1073,8 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <p className="text-gray-300 mb-2">Last Updated: <span className="text-purple-400 font-semibold">2 hours ago</span></p>
-                    <p className="text-gray-300 mb-2">Active Locations: <span className="text-teal-400 font-semibold">89</span></p>
-                    <p className="text-gray-300">Model Version: <span className="text-orange-400 font-semibold">v2.1.3</span></p>
+                    <p className="text-gray-300 mb-2">Model Version: <span className="text-orange-400 font-semibold">v2.1.3</span></p>
+                    <p className="text-gray-300">Status: <span className="text-green-400 font-semibold">Active</span></p>
                   </div>
                 </div>
               </div>
@@ -576,79 +1082,71 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* Saved Records Tab */}
-        {activeTab === 'records' && (
+        {/* Calculations Tab */}
+        {activeTab === 'calculations' && (
           <div className="space-y-8">
             <div className="bg-black bg-opacity-40 backdrop-blur-lg rounded-2xl border border-gray-700 p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">Saved Records</h2>
-                <div className="text-sm text-gray-400">
-                  {savedData.length} total records
-                </div>
+                <h2 className="text-2xl font-bold">Recent Calculations</h2>
+                <button
+                  onClick={fetchCalculations}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Refresh</span>
+                </button>
               </div>
 
-              {savedData.length === 0 ? (
+              {calculations.length === 0 ? (
                 <div className="text-center py-12">
-                  <Database className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-400 mb-2">No records found</h3>
-                  <p className="text-gray-500">Save some data to see records here</p>
+                  <Calculator className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-400 mb-2">No calculations found</h3>
+                  <p className="text-gray-500">Calculations will appear here after users perform calculations</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {savedData.map((record) => (
-                    <div key={record.id} className="bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-gray-600">
+                  {calculations.slice(0, 10).map((calc) => (
+                    <div key={calc._id} className="bg-gray-800 bg-opacity-50 rounded-xl p-6 border border-gray-600">
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <h3 className="text-lg font-semibold text-white">
-                            {record.selectedLocation.city ? 
-                              `${record.selectedLocation.city}, ${record.selectedLocation.district}` : 
-                              'Model Configuration'
-                            }
+                            {calc.location.city}, {calc.location.district}
                           </h3>
                           <p className="text-gray-400 text-sm">
-                            Saved on {new Date(record.timestamp).toLocaleString()}
+                            {calc.solarPanelId?.name} - {calc.numberOfPanels} panel(s)
+                          </p>
+                          <p className="text-gray-400 text-sm">
+                            {new Date(calc.createdAt).toLocaleString()}
                           </p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {record.calculatedPVOUT && (
-                            <div className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                              PVOUT: {record.calculatedPVOUT.toFixed(3)}
-                            </div>
-                          )}
-                          <button
-                            onClick={() => deleteRecord(record.id)}
-                            className="text-red-400 hover:text-red-300 p-2 hover:bg-red-900 hover:bg-opacity-30 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        <div className="text-right">
+                          <div className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-semibold mb-2">
+                            PVOUT: {calc.pvout.toFixed(3)}
+                          </div>
+                          <div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-semibold">
+                            ${calc.monthlyEarnings.toFixed(2)}/month
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
-                          <h4 className="font-semibold text-gray-300 mb-2">Model Coefficients</h4>
-                          <div className="space-y-1 text-gray-400">
-                            <p>β₀: {record.modelCoefficients.beta0}</p>
-                            <p>β₁: {record.modelCoefficients.beta1}</p>
-                            <p>β₂: {record.modelCoefficients.beta2}</p>
-                            <p>β₃: {record.modelCoefficients.beta3}</p>
-                            <p>β₄: {record.modelCoefficients.beta4}</p>
-                            <p>ε: {record.modelCoefficients.epsilon}</p>
-                          </div>
+                          <h4 className="font-semibold text-gray-300 mb-2">Energy Production</h4>
+                          <p className="text-gray-400">Daily: {calc.dailyEnergyProduction.toFixed(2)} kWh</p>
+                          <p className="text-gray-400">Monthly: {calc.monthlyEnergyProduction.toFixed(2)} kWh</p>
                         </div>
                         
-                        {record.selectedLocation.city && (
-                          <div>
-                            <h4 className="font-semibold text-gray-300 mb-2">Location Variables</h4>
-                            <div className="space-y-1 text-gray-400">
-                              {record.variables.map(variable => (
-                                <p key={variable.id}>
-                                  {variable.name}: {record.locationVariables[variable.id]?.toFixed(2) || 'N/A'} {variable.unit}
-                                </p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <div>
+                          <h4 className="font-semibold text-gray-300 mb-2">Panel Details</h4>
+                          <p className="text-gray-400">Type: {calc.solarPanelId?.technology}</p>
+                          <p className="text-gray-400">Wattage: {calc.solarPanelId?.wattage}W</p>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-semibold text-gray-300 mb-2">Economics</h4>
+                          <p className="text-gray-400">Rate: ${calc.electricityRate}/kWh</p>
+                          <p className="text-gray-400">Panels: {calc.numberOfPanels}</p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -657,17 +1155,6 @@ const AdminPanel = () => {
             </div>
           </div>
         )}
-
-        {/* Save Button */}
-        <div className="fixed bottom-8 right-8">
-          <button
-            onClick={saveData}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-full shadow-lg flex items-center space-x-2 transition-all transform hover:scale-105"
-          >
-            <Save className="w-5 h-5" />
-            <span>Save Changes</span>
-          </button>
-        </div>
       </div>
     </div>
   );
