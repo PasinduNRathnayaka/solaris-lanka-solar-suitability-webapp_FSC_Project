@@ -6,14 +6,15 @@ const SolarPanels = () => {
   const [solarPanels, setSolarPanels] = useState([]);
   const [newSolarPanel, setNewSolarPanel] = useState({
     name: '',
-    manufacturer: '',
-    wattage: '',
     efficiency: '',
-    absorptionRate: '',
-    area: '',
-    pricePerUnit: '',
-    warranty: 25,
-    technology: 'Monocrystalline'
+    technology: 'Monocrystalline',
+    // Optional fields with defaults
+    manufacturer: 'Generic',
+    wattage: '300',
+    absorptionRate: '95',
+    area: '2',
+    pricePerUnit: '250',
+    warranty: 25
   });
   const [showAddSolarPanel, setShowAddSolarPanel] = useState(false);
   const [editingSolarPanel, setEditingSolarPanel] = useState(null);
@@ -34,8 +35,22 @@ const SolarPanels = () => {
     fetchSolarPanels();
   }, []);
 
+  const resetForm = () => {
+    setNewSolarPanel({
+      name: '',
+      efficiency: '',
+      technology: 'Monocrystalline',
+      manufacturer: 'Generic',
+      wattage: '300',
+      absorptionRate: '95',
+      area: '2',
+      pricePerUnit: '250',
+      warranty: 25
+    });
+  };
+
   const addSolarPanel = async () => {
-    if (newSolarPanel.name && newSolarPanel.manufacturer && newSolarPanel.wattage) {
+    if (newSolarPanel.name && newSolarPanel.efficiency) {
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/solar-panels`, {
@@ -53,17 +68,7 @@ const SolarPanels = () => {
         });
         if (response.ok) {
           await fetchSolarPanels();
-          setNewSolarPanel({
-            name: '',
-            manufacturer: '',
-            wattage: '',
-            efficiency: '',
-            absorptionRate: '',
-            area: '',
-            pricePerUnit: '',
-            warranty: 25,
-            technology: 'Monocrystalline'
-          });
+          resetForm();
           setShowAddSolarPanel(false);
         }
       } catch (error) {
@@ -72,11 +77,13 @@ const SolarPanels = () => {
       } finally {
         setLoading(false);
       }
+    } else {
+      alert('Please fill in the panel name and efficiency');
     }
   };
 
   const updateSolarPanel = async () => {
-    if (newSolarPanel.name && newSolarPanel.manufacturer && editingSolarPanel) {
+    if (newSolarPanel.name && newSolarPanel.efficiency && editingSolarPanel) {
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/solar-panels/${editingSolarPanel}`, {
@@ -94,17 +101,7 @@ const SolarPanels = () => {
         });
         if (response.ok) {
           await fetchSolarPanels();
-          setNewSolarPanel({
-            name: '',
-            manufacturer: '',
-            wattage: '',
-            efficiency: '',
-            absorptionRate: '',
-            area: '',
-            pricePerUnit: '',
-            warranty: 25,
-            technology: 'Monocrystalline'
-          });
+          resetForm();
           setShowAddSolarPanel(false);
           setEditingSolarPanel(null);
         }
@@ -114,6 +111,8 @@ const SolarPanels = () => {
       } finally {
         setLoading(false);
       }
+    } else {
+      alert('Please fill in the panel name and efficiency');
     }
   };
 
@@ -139,14 +138,14 @@ const SolarPanels = () => {
   const editSolarPanel = (panel) => {
     setNewSolarPanel({
       name: panel.name,
+      efficiency: panel.efficiency.toString(),
+      technology: panel.technology,
       manufacturer: panel.manufacturer,
       wattage: panel.wattage.toString(),
-      efficiency: panel.efficiency.toString(),
       absorptionRate: panel.absorptionRate.toString(),
       area: panel.area.toString(),
       pricePerUnit: panel.pricePerUnit.toString(),
-      warranty: panel.warranty,
-      technology: panel.technology
+      warranty: panel.warranty
     });
     setEditingSolarPanel(panel._id);
     setShowAddSolarPanel(true);
@@ -161,17 +160,7 @@ const SolarPanels = () => {
             onClick={() => {
               setShowAddSolarPanel(true);
               setEditingSolarPanel(null);
-              setNewSolarPanel({
-                name: '',
-                manufacturer: '',
-                wattage: '',
-                efficiency: '',
-                absorptionRate: '',
-                area: '',
-                pricePerUnit: '',
-                warranty: 25,
-                technology: 'Monocrystalline'
-              });
+              resetForm();
             }}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
@@ -197,80 +186,63 @@ const SolarPanels = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <input
-                type="text"
-                placeholder="Panel name"
-                value={newSolarPanel.name}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="text"
-                placeholder="Manufacturer"
-                value={newSolarPanel.manufacturer}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, manufacturer: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Wattage (W)"
-                value={newSolarPanel.wattage}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, wattage: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Efficiency (%)"
-                value={newSolarPanel.efficiency}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, efficiency: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Absorption Rate (%)"
-                value={newSolarPanel.absorptionRate}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, absorptionRate: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Area (m²)"
-                value={newSolarPanel.area}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, area: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Price per unit"
-                value={newSolarPanel.pricePerUnit}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, pricePerUnit: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Warranty (years)"
-                value={newSolarPanel.warranty}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, warranty: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              />
-              <select
-                value={newSolarPanel.technology}
-                onChange={(e) => setNewSolarPanel(prev => ({ ...prev, technology: e.target.value }))}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Monocrystalline">Monocrystalline</option>
-                <option value="Polycrystalline">Polycrystalline</option>
-                <option value="Thin Film">Thin Film</option>
-                <option value="Bifacial">Bifacial</option>
-              </select>
+            {/* Primary Fields */}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Panel Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., High Efficiency Solar Panel Pro"
+                  value={newSolarPanel.name}
+                  onChange={(e) => setNewSolarPanel(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Efficiency (%) <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 22.5"
+                    min="10"
+                    max="35"
+                    step="0.1"
+                    value={newSolarPanel.efficiency}
+                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, efficiency: e.target.value }))}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Technology <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={newSolarPanel.technology}
+                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, technology: e.target.value }))}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Monocrystalline">Monocrystalline</option>
+                    <option value="Polycrystalline">Polycrystalline</option>
+                    <option value="Thin Film">Thin Film</option>
+                    <option value="Bifacial">Bifacial</option>
+                  </select>
+                </div>
+              </div>
             </div>
+
+
             
-            <div className="flex space-x-4 mt-4">
+            <div className="flex space-x-4">
               <button
                 onClick={editingSolarPanel ? updateSolarPanel : addSolarPanel}
-                disabled={loading}
-                className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg transition-colors"
+                disabled={loading || !newSolarPanel.name || !newSolarPanel.efficiency}
+                className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg transition-colors"
               >
                 {loading ? 'Saving...' : (editingSolarPanel ? 'Update Panel' : 'Add Panel')}
               </button>
@@ -311,31 +283,26 @@ const SolarPanels = () => {
                 </div>
               </div>
               
-              <div className="space-y-2 text-sm">
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Manufacturer:</span> {panel.manufacturer}
-                </p>
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Technology:</span> {panel.technology}
-                </p>
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Wattage:</span> {panel.wattage}W
-                </p>
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Efficiency:</span> {panel.efficiency}%
-                </p>
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Absorption Rate:</span> {panel.absorptionRate}%
-                </p>
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Area:</span> {panel.area}m²
-                </p>
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Price:</span> ${panel.pricePerUnit}
-                </p>
-                <p className="text-white text-opacity-90">
-                  <span className="font-medium">Warranty:</span> {panel.warranty} years
-                </p>
+              {/* Primary Information Highlighted */}
+              <div className="space-y-3 mb-4">
+                <div className="bg-white bg-opacity-20 rounded-lg p-3">
+                  <p className="text-white font-medium text-lg">
+                    Efficiency: {panel.efficiency}%
+                  </p>
+                  <p className="text-white text-opacity-90">
+                    Technology: {panel.technology}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Secondary Information */}
+              <div className="space-y-2 text-sm text-white text-opacity-75">
+                <p><span className="font-medium">Manufacturer:</span> {panel.manufacturer}</p>
+                <p><span className="font-medium">Wattage:</span> {panel.wattage}W</p>
+                <p><span className="font-medium">Absorption Rate:</span> {panel.absorptionRate}%</p>
+                <p><span className="font-medium">Area:</span> {panel.area}m²</p>
+                <p><span className="font-medium">Price:</span> ${panel.pricePerUnit}</p>
+                <p><span className="font-medium">Warranty:</span> {panel.warranty} years</p>
               </div>
             </div>
           ))}

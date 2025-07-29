@@ -11,8 +11,8 @@ const AdminLayout = () => {
     { id: 'variables', label: 'Variables', icon: Database, path: '/admin/variables' },
     { id: 'solar-panels', label: 'Solar Panels', icon: Zap, path: '/admin/solar-panels' },
     { id: 'locations', label: 'Location Data', icon: MapPin, path: '/admin/locations' },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
-    { id: 'calculations', label: 'Calculations', icon: Users, path: '/admin/calculations' }
+    // { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+    // { id: 'calculations', label: 'Calculations', icon: Users, path: '/admin/calculations' }
   ];
 
   const isActiveTab = (path) => {
@@ -47,7 +47,7 @@ const AdminLayout = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Navigation Tabs */}
-        <div className="flex space-x-1 mb-8 bg-gray-800 bg-opacity-50 rounded-xl p-1 overflow-x-auto">
+        <div className="flex space-x-6 mb-8 bg-gray-800 bg-opacity-50 rounded-xl p-1 overflow-x-auto">
           {tabs.map(tab => (
             <button
               key={tab.id}
