@@ -10,11 +10,9 @@ const LocationData = () => {
   const [electricityRate, setElectricityRate] = useState('');
   const [modelCoefficients, setModelCoefficients] = useState({
     beta0: 2.5,
-    beta1: 0.8,
-    beta2: -0.3,
-    beta3: 0.6,
-    beta4: 0.4,
-    epsilon: 0.1
+    epsilon: 0.1,
+    coefficients: [],
+    variables: []
   });
 
   const locationData = {
@@ -96,12 +94,10 @@ const LocationData = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched location data:', data); // Debug log
+        console.log('Fetched location data:', data);
         
-        // Reset location variables first
         const variableValues = {};
         
-        // Populate with fetched data
         if (data && data.variables) {
           data.variables.forEach(v => {
             variableValues[v.variableId._id || v.variableId] = v.value;
@@ -110,18 +106,13 @@ const LocationData = () => {
         
         setLocationVariables(variableValues);
         setElectricityRate(data?.electricityRate?.toString() || '');
-        
-        console.log('Set location variables:', variableValues); // Debug log
-        console.log('Set electricity rate:', data?.electricityRate); // Debug log
       } else {
-        // If no data exists for this location, reset to empty values
         console.log('No existing data found for location, resetting values');
         setLocationVariables({});
         setElectricityRate('');
       }
     } catch (error) {
       console.error('Error fetching location data:', error);
-      // Reset values on error
       setLocationVariables({});
       setElectricityRate('');
     } finally {
@@ -135,11 +126,9 @@ const LocationData = () => {
   }, []);
 
   useEffect(() => {
-    // Clear previous data when location changes
     setLocationVariables({});
     setElectricityRate('');
     
-    // Fetch new data for selected location
     if (selectedLocation.city) {
       fetchLocationData();
     }
@@ -161,7 +150,6 @@ const LocationData = () => {
     try {
       setLoading(true);
       
-      // Only include variables that have values
       const variablesArray = Object.entries(locationVariables)
         .filter(([_, value]) => value !== '' && value !== null && value !== undefined)
         .map(([variableId, value]) => ({
@@ -177,8 +165,6 @@ const LocationData = () => {
         electricityRate: parseFloat(electricityRate) || 0
       };
 
-      console.log('Saving location data:', requestData); // Debug log
-
       const response = await fetch(`${API_URL}/locations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,15 +172,10 @@ const LocationData = () => {
       });
 
       if (response.ok) {
-        const savedData = await response.json();
-        console.log('Data saved successfully:', savedData); // Debug log
         alert('Location data saved successfully!');
-        
-        // Optionally refresh the data to confirm it was saved
         await fetchLocationData();
       } else {
         const errorData = await response.json();
-        console.error('Error response:', errorData);
         alert('Error saving location data: ' + (errorData.message || 'Unknown error'));
       }
     } catch (error) {
@@ -205,17 +186,27 @@ const LocationData = () => {
     }
   };
 
+  // Updated calculation function to use dynamic coefficients
   const calculatePVOUT = () => {
-    const { beta0, beta1, beta2, beta3, beta4, epsilon } = modelCoefficients;
-    const variableValues = Object.values(locationVariables).filter(v => v !== '' && v !== null && v !== undefined);
+    const { beta0, epsilon, coefficients } = modelCoefficients;
     
     let result = beta0 + epsilon;
-    if (variableValues[0]) result += beta1 * parseFloat(variableValues[0]);
-    if (variableValues[1]) result += beta2 * parseFloat(variableValues[1]);
-    if (variableValues[2]) result += beta3 * parseFloat(variableValues[2]);
-    if (variableValues[3]) result += beta4 * parseFloat(variableValues[3]);
+    
+    // Use coefficients array to calculate based on actual variable mapping
+    coefficients.forEach(coeff => {
+      const variableValue = locationVariables[coeff.variableId];
+      if (variableValue !== '' && variableValue !== null && variableValue !== undefined) {
+        result += coeff.value * parseFloat(variableValue);
+      }
+    });
     
     return result;
+  };
+
+  // Helper function to get coefficient for a specific variable
+  const getCoefficientForVariable = (variableId) => {
+    const coeff = modelCoefficients.coefficients.find(c => c.variableId === variableId);
+    return coeff ? coeff.value : 0;
   };
 
   const hasValidVariableValues = () => {
@@ -332,8 +323,8 @@ const LocationData = () => {
                 <div className="mb-6">
                   <h3 className="text-2xl font-bold mb-2 text-white">Mathematical Model</h3>
                   <p className="text-lg text-gray-300 font-mono">
-                    {variables.length > 0 
-                      ? `PVOUT = β₀${variables.map((_, index) => ` + β${index + 1}(${variables[index]?.name || `Variable${index + 1}`})`).join('')} + ε`
+                    {modelCoefficients.coefficients.length > 0 
+                      ? `PVOUT = β₀${modelCoefficients.coefficients.map((coeff, index) => ` + β${index + 1}(${coeff.variableName})`).join('')} + ε`
                       : 'PVOUT = β₀ + ε'
                     }
                   </p>
@@ -348,11 +339,13 @@ const LocationData = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                       {variables.map((variable, index) => {
                         const value = locationVariables[variable._id] || 0;
-                        const coefficient = [modelCoefficients.beta1, modelCoefficients.beta2, modelCoefficients.beta3, modelCoefficients.beta4][index];
+                        const coefficient = getCoefficientForVariable(variable._id);
+                        const coeffIndex = modelCoefficients.coefficients.findIndex(c => c.variableId === variable._id) + 1;
+                        
                         return (
                           <div key={variable._id} className="bg-gray-700 rounded-lg p-4">
                             <div className="flex items-center justify-between">
-                              <span className="font-medium text-white">β{index + 1}: {variable.name}</span>
+                              <span className="font-medium text-white">β{coeffIndex}: {variable.name}</span>
                               <span className="text-sm text-gray-400">{variable.unit}</span>
                             </div>
                             <p className="text-sm text-gray-300 mt-1">Value: {value}</p>
@@ -369,12 +362,11 @@ const LocationData = () => {
                       <div className="font-mono text-white space-y-1">
                         <div className="text-lg">PVOUT Calculation:</div>
                         <div>= {modelCoefficients.beta0} (β₀)</div>
-                        {variables.map((variable, index) => {
-                          const value = locationVariables[variable._id] || 0;
-                          const coefficient = [modelCoefficients.beta1, modelCoefficients.beta2, modelCoefficients.beta3, modelCoefficients.beta4][index];
+                        {modelCoefficients.coefficients.map((coeff, index) => {
+                          const value = locationVariables[coeff.variableId] || 0;
                           return (
-                            <div key={variable._id}>
-                              + {(coefficient * parseFloat(value || 0)).toFixed(3)} (β{index + 1} × {variable.name})
+                            <div key={coeff.variableId}>
+                              + {(coeff.value * parseFloat(value || 0)).toFixed(3)} (β{index + 1} × {coeff.variableName})
                             </div>
                           );
                         })}
@@ -393,7 +385,7 @@ const LocationData = () => {
                 <div className="bg-gradient-to-br from-green-600 to-teal-600 rounded-xl p-6 mb-6">
                   <h4 className="text-xl font-semibold text-white mb-4">Final PVOUT Result</h4>
                   <div className="text-4xl font-bold text-white mb-2">
-                    {calculatePVOUT().toFixed(3)} kWh/m²/day
+                    {calculatePVOUT().toFixed(3)} kWh/m²/year
                   </div>
                   <p className="text-white text-opacity-80">
                     Photovoltaic Power Output for {selectedLocation.city}, {selectedLocation.district}
