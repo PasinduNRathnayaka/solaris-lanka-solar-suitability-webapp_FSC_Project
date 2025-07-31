@@ -258,7 +258,7 @@ const SolarPanels = () => {
                     
                     <div className="bg-white bg-opacity-20 rounded-lg p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-white font-medium">Efficiency:</span>
+                        <span className="text-black font-medium">Efficiency:</span>
                         <span className="text-black font-bold text-xl">{panel.efficiency}%</span>
                       </div>
                     </div>
