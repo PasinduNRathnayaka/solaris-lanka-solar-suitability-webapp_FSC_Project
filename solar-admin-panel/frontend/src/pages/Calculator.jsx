@@ -9,6 +9,7 @@ const Calculator = () => {
   const [selectedPanel, setSelectedPanel] = useState('');
   const [solarPanels, setSolarPanels] = useState([]);
   const [locationData, setLocationData] = useState(null);
+  const [panelArea, setPanelArea] = useState('');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -126,8 +127,14 @@ const Calculator = () => {
   };
 
   const calculateSolarOutput = async () => {
-    if (!selectedLocation.city || !selectedPanel || !locationData) {
-      alert('Please select location, solar panel, and ensure location data is loaded');
+    if (!selectedLocation.city || !selectedPanel || !locationData || !panelArea) {
+      alert('Please select location, solar panel, enter panel area, and ensure location data is loaded');
+      return;
+    }
+
+    const areaValue = parseFloat(panelArea);
+    if (isNaN(areaValue) || areaValue <= 0) {
+      alert('Please enter a valid panel area greater than 0');
       return;
     }
 
@@ -143,7 +150,8 @@ const Calculator = () => {
           district: selectedLocation.district,
           city: selectedLocation.city,
           solarPanelId: selectedPanel,
-          numberOfPanels: 1
+          numberOfPanels: 1,
+          panelArea: areaValue
         })
       });
 
@@ -153,18 +161,18 @@ const Calculator = () => {
       } else {
         const errorData = await response.json();
         // If API fails, calculate manually using database data
-        calculateManually();
+        calculateManually(areaValue);
       }
     } catch (error) {
       console.error('Error calculating solar output:', error);
-      calculateManually();
+      calculateManually(areaValue);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateManually = () => {
-    if (!locationData || !selectedPanel) return;
+  const calculateManually = (areaValue) => {
+    if (!locationData || !selectedPanel || !areaValue) return;
 
     const selectedPanelData = solarPanels.find(panel => panel._id === selectedPanel);
     if (!selectedPanelData) return;
@@ -183,13 +191,12 @@ const Calculator = () => {
     const dailyPvout = annualPvout / 365; // kWh/m²/day
     const monthlyPvout = annualPvout / 12; // kWh/m²/month
 
-    // Calculate absorbed energy (assuming 1m² panel area for simplicity)
-    const panelArea = 1; // m² - you might want to add this to solar panel model
+    // Calculate absorbed energy using user-specified panel area
     const efficiency = selectedPanelData.efficiency / 100;
 
-    const dailyAbsorbedEnergy = dailyPvout * panelArea * efficiency;
-    const monthlyAbsorbedEnergy = monthlyPvout * panelArea * efficiency;
-    const annualAbsorbedEnergy = annualPvout * panelArea * efficiency;
+    const dailyAbsorbedEnergy = dailyPvout * areaValue * efficiency;
+    const monthlyAbsorbedEnergy = monthlyPvout * areaValue * efficiency;
+    const annualAbsorbedEnergy = annualPvout * areaValue * efficiency;
 
     // Calculate earnings (using electricity rate from location data)
     const electricityRate = locationData.electricityRate || 25; // LKR per kWh
@@ -217,7 +224,7 @@ const Calculator = () => {
       electricityRate,
       solarPanel: selectedPanelData,
       location: selectedLocation,
-      panelArea: panelArea
+      panelArea: areaValue
     });
   };
 
@@ -375,7 +382,7 @@ const Calculator = () => {
                 </div>
                 Location Data: {selectedLocation.city}, {selectedLocation.district}
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-white">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-black">
                 <div className="bg-white bg-opacity-20 rounded-xl p-4">
                   <p className="text-sm opacity-80 mb-1">Electricity Rate</p>
                   <p className="font-bold text-lg">LKR {locationData.electricityRate}/kWh</p>
@@ -414,9 +421,36 @@ const Calculator = () => {
             </select>
           </div>
 
+          {/* Panel Area Input */}
+          <div className="mb-10">
+            <label className={`block font-semibold text-lg mb-4 flex items-center ${themeClasses.text}`}>
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl mr-3">
+                <Settings className="w-6 h-6 text-white" />
+              </div>
+              Solar Panel Installation Area
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                value={panelArea}
+                onChange={(e) => setPanelArea(e.target.value)}
+                placeholder="Enter area in square meters (m²)"
+                min="0.1"
+                step="0.1"
+                className={`w-full border rounded-xl px-4 py-4 text-lg focus:ring-2 focus:border-transparent transition-all duration-200 shadow-md ${themeClasses.input}`}
+              />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                m²
+              </div>
+            </div>
+            <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Enter the total area you want to install solar panels on. This will be used to calculate your energy production and earnings.
+            </p>
+          </div>
+
           <button
             onClick={calculateSolarOutput}
-            disabled={loading || loadingLocation || !locationData || !selectedPanel}
+            disabled={loading || loadingLocation || !locationData || !selectedPanel || !panelArea}
             className={`w-full py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 disabled:transform-none disabled:opacity-50 text-white shadow-2xl ${themeClasses.button}`}
           >
             {loading ? (
@@ -441,7 +475,7 @@ const Calculator = () => {
                   {results.location.city}, {results.location.district}, {results.location.province}
                 </p>
                 <p className="text-lg text-white opacity-80 mt-2">
-                  Panel: {results.solarPanel.name} ({results.solarPanel.efficiency}% efficiency)
+                  Panel: {results.solarPanel.name} ({results.solarPanel.efficiency}% efficiency) | Area: {results.panelArea}m²
                 </p>
               </div>
               
@@ -514,12 +548,15 @@ const Calculator = () => {
                 
                 <p className="mb-2 font-semibold mt-4">2. Energy Absorption:</p>
                 <p className="mb-3">• Panel Efficiency: {results.solarPanel.efficiency}%</p>
-                <p className="mb-3">• Panel Area: {results.panelArea}m²</p>
+                <p className="mb-3">• Installation Area: {results.panelArea}m² (user input)</p>
                 <p className="mb-3">• Absorbed Energy = PVOUT × Panel Area × Efficiency</p>
+                <p className="mb-3">• Example (Daily): {results.pvout.daily} × {results.panelArea} × {results.solarPanel.efficiency}% = {results.absorbedEnergy.daily} kWh</p>
                 
                 <p className="mb-2 font-semibold mt-4">3. Financial Calculation:</p>
-                <p className="mb-3">• Electricity Rate: LKR {results.electricityRate}/kWh</p>
-                <p>• Earnings = Absorbed Energy × Electricity Rate</p>
+                <p className="mb-3">• Electricity Rate: LKR {results.electricityRate}/kWh (from database)</p>
+                <p className="mb-3">• Daily Earnings: {results.absorbedEnergy.daily} × {results.electricityRate} = LKR {results.earnings.daily}</p>
+                <p className="mb-3">• Monthly Earnings: {results.absorbedEnergy.monthly} × {results.electricityRate} = LKR {results.earnings.monthly}</p>
+                <p>• Annual Earnings: {results.absorbedEnergy.annual} × {results.electricityRate} = LKR {results.earnings.annual}</p>
               </div>
             </div>
 
@@ -532,16 +569,20 @@ const Calculator = () => {
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-xl">
-                    <span>Peak Sun Hours (Daily)</span>
-                    <span className="font-bold">{(parseFloat(results.pvout.daily) / 1).toFixed(1)} hours</span>
+                    <span>Installation Area</span>
+                    <span className="font-bold">{results.panelArea}m²</span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-green-50 dark:bg-green-900 rounded-xl">
-                    <span>Efficiency Rate</span>
+                    <span>Panel Efficiency</span>
                     <span className="font-bold">{results.solarPanel.efficiency}%</span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-yellow-50 dark:bg-yellow-900 rounded-xl">
-                    <span>Capacity Factor</span>
-                    <span className="font-bold">{((parseFloat(results.absorbedEnergy.annual) / (results.solarPanel.efficiency * results.panelArea * 8760)) * 100).toFixed(1)}%</span>
+                    <span>Total Daily Production</span>
+                    <span className="font-bold">{results.absorbedEnergy.daily} kWh</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-purple-50 dark:bg-purple-900 rounded-xl">
+                    <span>Production per m²</span>
+                    <span className="font-bold">{(parseFloat(results.absorbedEnergy.daily) / results.panelArea).toFixed(3)} kWh/m²</span>
                   </div>
                 </div>
               </div>
@@ -553,16 +594,16 @@ const Calculator = () => {
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 bg-green-50 dark:bg-green-900 rounded-xl">
-                    <span>Annual Revenue</span>
-                    <span className="font-bold">LKR {results.earnings.annual}</span>
+                    <span>Total Installation Area</span>
+                    <span className="font-bold">{results.panelArea}m²</span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-xl">
-                    <span>Revenue per kWh</span>
-                    <span className="font-bold">LKR {results.electricityRate}</span>
+                    <span>Revenue per m²/year</span>
+                    <span className="font-bold">LKR {(parseFloat(results.earnings.annual) / results.panelArea).toFixed(0)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-purple-50 dark:bg-purple-900 rounded-xl">
-                    <span>Energy Yield</span>
-                    <span className="font-bold">{(parseFloat(results.absorbedEnergy.annual) / results.panelArea).toFixed(0)} kWh/m²</span>
+                    <span>Energy Yield per m²</span>
+                    <span className="font-bold">{(parseFloat(results.absorbedEnergy.annual) / results.panelArea).toFixed(0)} kWh/m²/year</span>
                   </div>
                 </div>
               </div>
@@ -601,7 +642,16 @@ const Calculator = () => {
                 <div className="p-4 bg-yellow-500 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
-                <h4 className="font-bold mb-2">2. Choose Solar Panel</h4>
+                <h4 className="font-bold mb-2">2. Enter Installation Area</h4>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Input the total area (in square meters) where you plan to install solar panels
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="p-4 bg-yellow-500 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="font-bold mb-2">3. Choose Solar Panel</h4>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Select a solar panel type based on efficiency and specifications
                 </p>
@@ -610,9 +660,9 @@ const Calculator = () => {
                 <div className="p-4 bg-green-500 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
-                <h4 className="font-bold mb-2">3. Get Results</h4>
+                <h4 className="font-bold mb-2">4. Get Results</h4>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  View detailed calculations for energy production and financial returns
+                  View detailed calculations for energy production and financial returns based on your installation area
                 </p>
               </div>
             </div>
