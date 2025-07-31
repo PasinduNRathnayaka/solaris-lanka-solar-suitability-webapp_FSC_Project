@@ -518,7 +518,7 @@ const Calculator = () => {
               <h3 className="text-2xl font-bold mb-6">Calculation Method</h3>
               <div className={`p-6 rounded-xl font-mono text-sm overflow-x-auto ${darkMode ? 'bg-gray-800 text-green-400' : 'bg-gray-100 text-green-700'}`}>
                 <p className="mb-2 font-semibold">1. PVOUT Conversion:</p>
-                <p className="mb-3">• Annual PVOUT: {results.pvout.annual} kWh/m²/year (from database)</p>
+                <p className="mb-3">• Annual PVOUT: {results.pvout.annual} kWh/m²/year (from Model)</p>
                 <p className="mb-3">• Monthly PVOUT: {results.pvout.annual} ÷ 12 = {results.pvout.monthly} kWh/m²/month</p>
                 <p className="mb-3">• Daily PVOUT: {results.pvout.annual} ÷ 365 = {results.pvout.daily} kWh/m²/day</p>
                 
@@ -533,55 +533,6 @@ const Calculator = () => {
                 <p className="mb-3">• Daily Earnings: {results.absorbedEnergy.daily} × {results.electricityRate} = LKR {results.earnings.daily}</p>
                 <p className="mb-3">• Monthly Earnings: {results.absorbedEnergy.monthly} × {results.electricityRate} = LKR {results.earnings.monthly}</p>
                 <p>• Annual Earnings: {results.absorbedEnergy.annual} × {results.electricityRate} = LKR {results.earnings.annual}</p>
-              </div>
-            </div>
-
-            {/* Performance Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className={`rounded-2xl border shadow-xl p-8 ${themeClasses.card}`}>
-                <h3 className="text-2xl font-bold mb-6 flex items-center">
-                  <TrendingUp className="w-8 h-8 mr-3 text-blue-500" />
-                  Performance Summary
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-xl">
-                    <span>Installation Area</span>
-                    <span className="font-bold">{results.panelArea}m²</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-green-50 dark:bg-green-900 rounded-xl">
-                    <span>Panel Efficiency</span>
-                    <span className="font-bold">{results.solarPanel.efficiency}%</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-yellow-50 dark:bg-yellow-900 rounded-xl">
-                    <span>Total Daily Production</span>
-                    <span className="font-bold">{results.absorbedEnergy.daily} kWh</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-purple-50 dark:bg-purple-900 rounded-xl">
-                    <span>Production per m²</span>
-                    <span className="font-bold">{(parseFloat(results.absorbedEnergy.daily) / results.panelArea).toFixed(3)} kWh/m²</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`rounded-2xl border shadow-xl p-8 ${themeClasses.card}`}>
-                <h3 className="text-2xl font-bold mb-6 flex items-center">
-                  <DollarSign className="w-8 h-8 mr-3 text-green-500" />
-                  Investment Analysis
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-green-50 dark:bg-green-900 rounded-xl">
-                    <span>Total Installation Area</span>
-                    <span className="font-bold">{results.panelArea}m²</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-xl">
-                    <span>Revenue per m²/year</span>
-                    <span className="font-bold">LKR {(parseFloat(results.earnings.annual) / results.panelArea).toFixed(0)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-purple-50 dark:bg-purple-900 rounded-xl">
-                    <span>Energy Yield per m²</span>
-                    <span className="font-bold">{(parseFloat(results.absorbedEnergy.annual) / results.panelArea).toFixed(0)} kWh/m²/year</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
