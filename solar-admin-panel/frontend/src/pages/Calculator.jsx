@@ -374,30 +374,6 @@ const Calculator = () => {
             </div>
           )}
 
-          {locationData && (
-            <div className={`mb-10 p-8 rounded-2xl shadow-xl ${themeClasses.locationCard}`}>
-              <h3 className="text-2xl font-bold mb-6 flex items-center text-white">
-                <div className="p-2 bg-white bg-opacity-20 rounded-xl mr-3">
-                  <MapPin className="w-8 h-8" />
-                </div>
-                Location Data: {selectedLocation.city}, {selectedLocation.district}
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-black">
-                <div className="bg-white bg-opacity-20 rounded-xl p-4">
-                  <p className="text-sm opacity-80 mb-1">Electricity Rate</p>
-                  <p className="font-bold text-lg">LKR {locationData.electricityRate}/kWh</p>
-                </div>
-                {locationData.variables?.map((variable, index) => (
-                  <div key={index} className="bg-white bg-opacity-20 rounded-xl p-4">
-                    <p className="text-sm opacity-80 mb-1">{variable.variableId?.name || `Variable ${index + 1}`}</p>
-                    <p className="font-bold text-lg">
-                      {variable.value} {variable.variableId?.unit || ''}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Solar Panel Selection */}
           <div className="mb-10">
@@ -481,7 +457,7 @@ const Calculator = () => {
               
               {/* PVOUT Values */}
               <div className="mb-10">
-                <h4 className="text-2xl font-bold text-white mb-6 text-center">Solar Irradiance (PVOUT)</h4>
+                <h4 className="text-2xl font-bold text-white mb-6 text-center">PVOUT</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
                     { title: 'Daily PVOUT', value: results.pvout.daily, unit: 'kWh/m²/day', icon: Sun },
@@ -490,9 +466,9 @@ const Calculator = () => {
                   ].map((item, index) => (
                     <div key={index} className="bg-white bg-opacity-20 rounded-2xl p-6 text-center">
                       <item.icon className="w-12 h-12 mx-auto mb-4 text-yellow-300" />
-                      <h5 className="text-lg font-semibold text-white mb-2">{item.title}</h5>
-                      <div className="text-3xl font-bold text-white mb-1">{item.value}</div>
-                      <p className="text-white opacity-80">{item.unit}</p>
+                      <h5 className="text-lg font-semibold text-black mb-2">{item.title}</h5>
+                      <div className="text-3xl font-bold text-black mb-1">{item.value}</div>
+                      <p className="text-black opacity-80">{item.unit}</p>
                     </div>
                   ))}
                 </div>
@@ -509,9 +485,9 @@ const Calculator = () => {
                   ].map((item, index) => (
                     <div key={index} className="bg-white bg-opacity-20 rounded-2xl p-6 text-center">
                       <item.icon className="w-12 h-12 mx-auto mb-4 text-blue-300" />
-                      <h5 className="text-lg font-semibold text-white mb-2">{item.title}</h5>
-                      <div className="text-3xl font-bold text-white mb-1">{item.value}</div>
-                      <p className="text-white opacity-80">{item.unit}</p>
+                      <h5 className="text-lg font-semibold text-black mb-2">{item.title}</h5>
+                      <div className="text-3xl font-bold text-black mb-1">{item.value}</div>
+                      <p className="text-black opacity-80">{item.unit}</p>
                     </div>
                   ))}
                 </div>
@@ -528,9 +504,9 @@ const Calculator = () => {
                   ].map((item, index) => (
                     <div key={index} className="bg-white bg-opacity-20 rounded-2xl p-6 text-center">
                       <item.icon className="w-12 h-12 mx-auto mb-4 text-green-300" />
-                      <h5 className="text-lg font-semibold text-white mb-2">{item.title}</h5>
-                      <div className="text-3xl font-bold text-white mb-1">{item.value}</div>
-                      <p className="text-white opacity-80">{item.unit}</p>
+                      <h5 className="text-lg font-semibold text-black mb-2">{item.title}</h5>
+                      <div className="text-3xl font-bold text-black mb-1">{item.value}</div>
+                      <p className="text-black opacity-80">{item.unit}</p>
                     </div>
                   ))}
                 </div>
