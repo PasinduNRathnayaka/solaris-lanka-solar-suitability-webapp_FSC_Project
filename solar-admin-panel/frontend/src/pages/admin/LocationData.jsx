@@ -324,8 +324,8 @@ const LocationData = () => {
                   <h3 className="text-2xl font-bold mb-2 text-white">Mathematical Model</h3>
                   <p className="text-lg text-gray-300 font-mono">
                     {modelCoefficients.coefficients.length > 0 
-                      ? `PVOUT = β₀${modelCoefficients.coefficients.map((coeff, index) => ` + β${index + 1}(${coeff.variableName})`).join('')} + ε`
-                      : 'PVOUT = β₀ + ε'
+                      ? `PVOUT = β₀${modelCoefficients.coefficients.map((coeff, index) => ` + β${index + 1}(${coeff.variableName})`).join('')} `
+                      : 'PVOUT = β₀'
                     }
                   </p>
                 </div>
@@ -370,7 +370,7 @@ const LocationData = () => {
                             </div>
                           );
                         })}
-                        <div>+ {modelCoefficients.epsilon} (ε)</div>
+                        {/* <div>+ {modelCoefficients.epsilon} (ε)</div> */}
                         <div className="border-t border-gray-600 pt-2 mt-2 text-xl font-bold text-green-400">
                           = {calculatePVOUT().toFixed(3)} kWh/m²/day
                         </div>

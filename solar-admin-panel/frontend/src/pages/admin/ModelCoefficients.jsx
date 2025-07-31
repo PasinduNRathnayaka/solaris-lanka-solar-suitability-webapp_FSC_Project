@@ -88,7 +88,7 @@ const ModelCoefficients = () => {
     modelData.coefficients.forEach((coeff, index) => {
       equation += ` + β${index + 1}(${coeff.variableName})`;
     });
-    equation += ` + ε`;
+    equation += ` `;
     return equation;
   };
 
@@ -169,7 +169,7 @@ const ModelCoefficients = () => {
               ))}
 
               {/* Error Term */}
-              <div className="bg-gradient-to-br from-gray-600 to-gray-700 rounded-xl p-6">
+              {/* <div className="bg-gradient-to-br from-gray-600 to-gray-700 rounded-xl p-6">
                 <label className="block text-white font-medium mb-3">
                   ε (Error Term)
                 </label>
@@ -182,7 +182,7 @@ const ModelCoefficients = () => {
                   className="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-lg font-semibold placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
                 <p className="text-white text-opacity-70 text-sm mt-2">Random error component</p>
-              </div>
+              </div> */}
             </div>
 
             {/* Variables Summary */}
