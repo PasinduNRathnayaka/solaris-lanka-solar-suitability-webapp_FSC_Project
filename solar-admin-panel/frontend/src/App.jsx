@@ -7,7 +7,7 @@ import Variables from './pages/admin/Variables'
 import SolarPanels from './pages/admin/SolarPanels'
 import LocationData from './pages/admin/LocationData'
 import Analytics from './pages/admin/Analytics'
-import Calculations from './pages/admin/Calculations'
+import Calculations from './pages/Calculator/Calculator'
 
 const App = () => {
   return (
