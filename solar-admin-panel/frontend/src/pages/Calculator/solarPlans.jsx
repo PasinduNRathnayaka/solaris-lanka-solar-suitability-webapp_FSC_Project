@@ -390,10 +390,10 @@ Actual costs and benefits may vary based on specific circumstances.
                   )}
                   
                   <div className="bg-white bg-opacity-20 rounded-xl p-6">
-                    <h4 className="font-bold text-white mb-4">Plan Benefits:</h4>
+                    <h4 className="font-bold text-black mb-4">Plan Benefits:</h4>
                     <ul className="space-y-2">
                       {plan.benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-center text-white">
+                        <li key={index} className="flex items-center text-black">
                           <div className="w-2 h-2 bg-green-300 rounded-full mr-3"></div>
                           {benefit}
                         </li>
