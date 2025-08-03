@@ -1,6 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
-import Calculator from './pages/Calculator'
+import Calculator from './pages/Calculator/Calculator'
 import AdminLayout from './components/AdminLayout'
 import ModelCoefficients from './pages/admin/ModelCoefficients'
 import Variables from './pages/admin/Variables'
