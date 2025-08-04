@@ -13,9 +13,6 @@ const SolarPlans = ({
 }) => {
   const [selectedPlan, setSelectedPlan] = useState('net-accounting');
   
-  // Solar panel installation cost per m² (LKR)
-  const INSTALLATION_COST_PER_SQM = 125000; // LKR per m²
-  
   // CEB electricity rates (approximate)
   const CEB_RATE_DOMESTIC = 25; // LKR per kWh for domestic users
   const EXPORT_RATE = 22; // LKR per kWh for exported power
@@ -68,6 +65,15 @@ const SolarPlans = ({
     }
   ];
 
+  // Get the selected panel's installation cost
+  const getSelectedPanelCost = () => {
+    if (selectedPanel && solarPanels) {
+      const panel = solarPanels.find(p => p._id === selectedPanel);
+      return panel?.costPerSqm || 125000; // Fallback to default if not found
+    }
+    return 125000; // Default fallback
+  };
+
   const calculatePlanBenefits = (plan) => {
     if (!results || !monthlyElectricityUnits) return null;
 
@@ -116,7 +122,8 @@ const SolarPlans = ({
 
   const calculateInstallationCost = () => {
     if (!panelArea) return 0;
-    return (parseFloat(panelArea) * INSTALLATION_COST_PER_SQM).toFixed(2);
+    const costPerSqm = getSelectedPanelCost();
+    return (parseFloat(panelArea) * costPerSqm).toFixed(2);
   };
 
   const calculatePaybackPeriod = (plan) => {
@@ -144,6 +151,7 @@ const SolarPlans = ({
     const installationCost = calculateInstallationCost();
     const paybackPeriod = calculatePaybackPeriod(selectedPlanData);
     const selectedPanelData = solarPanels.find(p => p._id === selectedPanel);
+    const costPerSqm = getSelectedPanelCost();
 
     // Create PDF content
     const reportContent = `
@@ -152,7 +160,7 @@ Generated on: ${new Date().toLocaleDateString()}
 
 === PROJECT DETAILS ===
 Location: ${results?.location?.city}, ${results?.location?.district}, ${results?.location?.province}
-Solar Panel: ${selectedPanelData?.name} (${selectedPanelData?.efficiency}% efficiency)
+Solar Panel: ${selectedPanelData?.name || 'Default Panel'} (${selectedPanelData?.efficiency || 'N/A'}% efficiency)
 Installation Area: ${panelArea}m²
 Monthly Electricity Consumption: ${monthlyElectricityUnits} kWh
 
@@ -167,6 +175,7 @@ Annual Energy Production: ${results?.absorbedEnergy?.annual} kWh
 
 === FINANCIAL ANALYSIS ===
 Installation Cost: LKR ${installationCost}
+Cost per m²: LKR ${costPerSqm.toLocaleString()}
 Selected Plan: ${selectedPlanData?.name}
 
 Monthly Savings: LKR ${benefits?.monthlySavings}
@@ -195,7 +204,7 @@ Based on your electricity consumption and solar generation:
   return parseFloat(currentBenefits?.netBenefit || 0) > parseFloat(bestBenefits?.netBenefit || 0) ? plan : best;
 }, solarPlans[0]).name}
 
-This analysis is based on current CEB rates and estimated installation costs.
+This analysis is based on current CEB rates and installation costs from selected solar panel.
 Actual costs and benefits may vary based on specific circumstances.
     `;
 
@@ -209,9 +218,20 @@ Actual costs and benefits may vary based on specific circumstances.
     document.body.removeChild(element);
   };
 
+  // Get selected panel data for display
+  const getSelectedPanelData = () => {
+    if (selectedPanel && solarPanels) {
+      return solarPanels.find(p => p._id === selectedPanel);
+    }
+    return null;
+  };
+
   if (!results) {
     return null;
   }
+
+  const selectedPanelData = getSelectedPanelData();
+  const costPerSqm = getSelectedPanelCost();
 
   return (
     <div className="space-y-8">
@@ -256,12 +276,20 @@ Actual costs and benefits may vary based on specific circumstances.
             <h3 className="text-xl font-bold mb-4">Cost Breakdown</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
+                <span>Selected Panel:</span>
+                <span className="font-bold">{selectedPanelData?.name || 'Default Panel'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Panel Efficiency:</span>
+                <span className="font-bold">{selectedPanelData?.efficiency || 'N/A'}%</span>
+              </div>
+              <div className="flex justify-between">
                 <span>Installation Area:</span>
                 <span className="font-bold">{panelArea}m²</span>
               </div>
               <div className="flex justify-between">
                 <span>Cost per m²:</span>
-                <span className="font-bold">LKR {INSTALLATION_COST_PER_SQM.toLocaleString()}</span>
+                <span className="font-bold">LKR {costPerSqm.toLocaleString()}</span>
               </div>
               <div className="border-t border-white border-opacity-30 pt-3">
                 <div className="flex justify-between text-xl">
@@ -296,6 +324,18 @@ Actual costs and benefits may vary based on specific circumstances.
                 1-year warranty
               </li>
             </ul>
+            
+            {selectedPanelData && (
+              <div className="mt-4 p-3 bg-blue-500 bg-opacity-20 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Dynamic Pricing:</span>
+                  <span className="text-green-600 font-bold">✓ Active</span>
+                </div>
+                <p className="text-xs mt-1 opacity-80">
+                  Cost calculated based on selected panel specifications
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

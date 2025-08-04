@@ -62,9 +62,9 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
           </p>
         </div>
         
-        {/* PVOUT Values */}
+        {/* PVOUT Values - Model Generated */}
         <div className="mb-10">
-          <h4 className="text-2xl font-bold text-white mb-6 text-center">PVOUT</h4>
+          <h4 className="text-2xl font-bold text-white mb-6 text-center">PVOUT (Model Generated)</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { title: 'Daily PVOUT', value: results.pvout.daily, unit: 'kWh/m²/day', icon: Sun },
@@ -81,9 +81,9 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
           </div>
         </div>
 
-        {/* Energy Production */}
+        {/* Energy Production - Based on PVOUT and Panel Area */}
         <div className="mb-10">
-          <h4 className="text-2xl font-bold text-white mb-6 text-center">Energy Production (Absorbed)</h4>
+          <h4 className="text-2xl font-bold text-white mb-6 text-center">Energy Production</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { title: 'Daily Production', value: results.absorbedEnergy.daily, unit: 'kWh/day', icon: Battery },
@@ -100,14 +100,45 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
           </div>
         </div>
 
-        {/* Earnings */}
+        {/* Installation Cost */}
+        <div className="mb-10">
+          <h4 className="text-2xl font-bold text-white mb-6 text-center">Installation Cost</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-center">
+              <DollarSign className="w-12 h-12 mx-auto mb-4 text-orange-300" />
+              <h5 className="text-lg font-semibold text-black mb-2">Total Cost</h5>
+              <div className="text-3xl font-bold text-black mb-1">
+                LKR {(results.solarPanel.costPerSqm * results.panelArea).toLocaleString()}
+              </div>
+              <p className="text-black opacity-80">Complete Installation</p>
+            </div>
+            
+            <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-center">
+              <Zap className="w-12 h-12 mx-auto mb-4 text-purple-300" />
+              <h5 className="text-lg font-semibold text-black mb-2">Cost per m²</h5>
+              <div className="text-3xl font-bold text-black mb-1">
+                LKR {results.solarPanel.costPerSqm.toLocaleString()}
+              </div>
+              <p className="text-black opacity-80">Per Square Meter</p>
+            </div>
+            
+            <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-center">
+              <TrendingUp className="w-12 h-12 mx-auto mb-4 text-green-300" />
+              <h5 className="text-lg font-semibold text-black mb-2">Area Coverage</h5>
+              <div className="text-3xl font-bold text-black mb-1">{results.panelArea}</div>
+              <p className="text-black opacity-80">Square Meters</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Basic Financial Returns */}
         <div>
-          <h4 className="text-2xl font-bold text-white mb-6 text-center">Financial Returns</h4>
+          <h4 className="text-2xl font-bold text-white mb-6 text-center">Basic Financial Returns</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { title: 'Daily Earnings', value: `LKR ${results.earnings.daily}`, unit: 'per day', icon: DollarSign },
-              { title: 'Monthly Earnings', value: `LKR ${results.earnings.monthly}`, unit: 'per month', icon: DollarSign },
-              { title: 'Annual Earnings', value: `LKR ${results.earnings.annual}`, unit: 'per year', icon: DollarSign }
+              { title: 'Daily Value', value: `LKR ${results.earnings.daily}`, unit: 'per day', icon: DollarSign },
+              { title: 'Monthly Value', value: `LKR ${results.earnings.monthly}`, unit: 'per month', icon: DollarSign },
+              { title: 'Annual Value', value: `LKR ${results.earnings.annual}`, unit: 'per year', icon: DollarSign }
             ].map((item, index) => (
               <div key={index} className="bg-white bg-opacity-20 rounded-2xl p-6 text-center">
                 <item.icon className="w-12 h-12 mx-auto mb-4 text-green-300" />
@@ -124,22 +155,30 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
       <div className={`rounded-2xl border shadow-xl p-8 ${themeClasses.card}`}>
         <h3 className="text-2xl font-bold mb-6">Calculation Method</h3>
         <div className={`p-6 rounded-xl font-mono text-sm overflow-x-auto ${darkMode ? 'bg-gray-800 text-green-400' : 'bg-gray-100 text-green-700'}`}>
-          <p className="mb-2 font-semibold">1. PVOUT Conversion:</p>
-          <p className="mb-3">• Annual PVOUT: {results.pvout.annual} kWh/m²/year (from Model)</p>
+          <p className="mb-2 font-semibold">1. PVOUT from Mathematical Model:</p>
+          <p className="mb-3">• Annual PVOUT: {results.pvout.annual} kWh/m²/year (Generated by Model)</p>
           <p className="mb-3">• Monthly PVOUT: {results.pvout.annual} ÷ 12 = {results.pvout.monthly} kWh/m²/month</p>
           <p className="mb-3">• Daily PVOUT: {results.pvout.annual} ÷ 365 = {results.pvout.daily} kWh/m²/day</p>
           
-          <p className="mb-2 font-semibold mt-4">2. Energy Absorption:</p>
+          <p className="mb-2 font-semibold mt-4">2. Energy Production Calculation:</p>
           <p className="mb-3">• Panel Efficiency: {results.solarPanel.efficiency}%</p>
           <p className="mb-3">• Installation Area: {results.panelArea}m² (user input)</p>
-          <p className="mb-3">• Absorbed Energy = PVOUT × Panel Area × Efficiency</p>
+          <p className="mb-3">• Energy Production = PVOUT × Panel Area × Efficiency</p>
           <p className="mb-3">• Example (Daily): {results.pvout.daily} × {results.panelArea} × {results.solarPanel.efficiency}% = {results.absorbedEnergy.daily} kWh</p>
           
-          <p className="mb-2 font-semibold mt-4">3. Financial Calculation:</p>
-          <p className="mb-3">• Electricity Rate: LKR {results.electricityRate}/kWh (from database)</p>
-          <p className="mb-3">• Daily Earnings: {results.absorbedEnergy.daily} × {results.electricityRate} = LKR {results.earnings.daily}</p>
-          <p className="mb-3">• Monthly Earnings: {results.absorbedEnergy.monthly} × {results.electricityRate} = LKR {results.earnings.monthly}</p>
-          <p>• Annual Earnings: {results.absorbedEnergy.annual} × {results.electricityRate} = LKR {results.earnings.annual}</p>
+          <p className="mb-2 font-semibold mt-4">3. Installation Cost:</p>
+          <p className="mb-3">• Cost per m²: LKR {results.solarPanel.costPerSqm.toLocaleString()}/m²</p>
+          <p className="mb-3">• Total Cost: {results.panelArea}m² × LKR {results.solarPanel.costPerSqm.toLocaleString()} = LKR {(results.solarPanel.costPerSqm * results.panelArea).toLocaleString()}</p>
+          
+          <p className="mb-2 font-semibold mt-4">4. Basic Financial Value:</p>
+          <p className="mb-3">• Base Rate: LKR {results.electricityRate}/kWh (simplified rate)</p>
+          <p className="mb-3">• Daily Value: {results.absorbedEnergy.daily} × {results.electricityRate} = LKR {results.earnings.daily}</p>
+          <p className="mb-3">• Monthly Value: {results.absorbedEnergy.monthly} × {results.electricityRate} = LKR {results.earnings.monthly}</p>
+          <p>• Annual Value: {results.absorbedEnergy.annual} × {results.electricityRate} = LKR {results.earnings.annual}</p>
+          
+          <p className="mb-2 font-semibold mt-4 text-yellow-600">Note:</p>
+          <p className="text-yellow-600">• Enter your monthly electricity consumption below for detailed tiered pricing analysis</p>
+          <p className="text-yellow-600">• Different Sri Lankan solar plans (Net Metering, Net Accounting, Net Plus) will be analyzed</p>
         </div>
       </div>
     </div>
