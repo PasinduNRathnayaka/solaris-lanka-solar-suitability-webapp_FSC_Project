@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, X, Zap } from 'lucide-react';
+import { Plus, Edit3, Trash2, X, Zap, DollarSign } from 'lucide-react';
 
 const SolarPanels = () => {
   const [loading, setLoading] = useState(false);
   const [solarPanels, setSolarPanels] = useState([]);
   const [newSolarPanel, setNewSolarPanel] = useState({
     name: '',
-    efficiency: ''
+    efficiency: '',
+    costPerSqm: '125000' // LKR per m²
   });
   const [showAddSolarPanel, setShowAddSolarPanel] = useState(false);
   const [editingSolarPanel, setEditingSolarPanel] = useState(null);
@@ -30,12 +31,13 @@ const SolarPanels = () => {
   const resetForm = () => {
     setNewSolarPanel({
       name: '',
-      efficiency: ''
+      efficiency: '',
+      costPerSqm: '125000'
     });
   };
 
   const addSolarPanel = async () => {
-    if (newSolarPanel.name && newSolarPanel.efficiency) {
+    if (newSolarPanel.name && newSolarPanel.efficiency && newSolarPanel.costPerSqm) {
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/solar-panels`, {
@@ -43,7 +45,8 @@ const SolarPanels = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: newSolarPanel.name,
-            efficiency: parseFloat(newSolarPanel.efficiency)
+            efficiency: parseFloat(newSolarPanel.efficiency),
+            costPerSqm: parseFloat(newSolarPanel.costPerSqm)
           })
         });
         
@@ -62,12 +65,12 @@ const SolarPanels = () => {
         setLoading(false);
       }
     } else {
-      alert('Please fill in the panel name and efficiency');
+      alert('Please fill in all required fields');
     }
   };
 
   const updateSolarPanel = async () => {
-    if (newSolarPanel.name && newSolarPanel.efficiency && editingSolarPanel) {
+    if (newSolarPanel.name && newSolarPanel.efficiency && newSolarPanel.costPerSqm && editingSolarPanel) {
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/solar-panels/${editingSolarPanel}`, {
@@ -75,7 +78,8 @@ const SolarPanels = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: newSolarPanel.name,
-            efficiency: parseFloat(newSolarPanel.efficiency)
+            efficiency: parseFloat(newSolarPanel.efficiency),
+            costPerSqm: parseFloat(newSolarPanel.costPerSqm)
           })
         });
         
@@ -95,7 +99,7 @@ const SolarPanels = () => {
         setLoading(false);
       }
     } else {
-      alert('Please fill in the panel name and efficiency');
+      alert('Please fill in all required fields');
     }
   };
 
@@ -124,7 +128,8 @@ const SolarPanels = () => {
   const editSolarPanel = (panel) => {
     setNewSolarPanel({
       name: panel.name,
-      efficiency: panel.efficiency.toString()
+      efficiency: panel.efficiency.toString(),
+      costPerSqm: panel.costPerSqm?.toString() || '125000'
     });
     setEditingSolarPanel(panel._id);
     setShowAddSolarPanel(true);
@@ -167,7 +172,7 @@ const SolarPanels = () => {
                 </button>
               </div>
               
-              <div className="space-y-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Panel Name <span className="text-red-400">*</span>
@@ -196,12 +201,30 @@ const SolarPanels = () => {
                     className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Installation Cost per m² (LKR) <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="125000"
+                    min="50000"
+                    step="1000"
+                    value={newSolarPanel.costPerSqm}
+                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, costPerSqm: e.target.value }))}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    Total installation cost including panels, inverter, mounting, permits
+                  </p>
+                </div>
               </div>
 
               <div className="flex space-x-4">
                 <button
                   onClick={editingSolarPanel ? updateSolarPanel : addSolarPanel}
-                  disabled={loading || !newSolarPanel.name || !newSolarPanel.efficiency}
+                  disabled={loading || !newSolarPanel.name || !newSolarPanel.efficiency || !newSolarPanel.costPerSqm}
                   className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105 disabled:hover:scale-100"
                 >
                   {loading ? 'Saving...' : (editingSolarPanel ? 'Update Panel' : 'Add Panel')}
@@ -227,7 +250,7 @@ const SolarPanels = () => {
               <p className="text-gray-500">Click "Add Solar Panel" to get started</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {solarPanels.map((panel) => (
                 <div key={panel._id} className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
                   <div className="flex items-center justify-between mb-4">
@@ -256,10 +279,29 @@ const SolarPanels = () => {
                       {panel.name}
                     </h3>
                     
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
+                        <div className="text-sm text-black font-medium">Efficiency</div>
+                        <div className="text-lg font-bold text-black">{panel.efficiency}%</div>
+                      </div>
+                      
+                      <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
+                        <div className="text-sm text-black font-medium flex items-center justify-center">
+                          <DollarSign className="w-3 h-3 mr-1" />
+                          Cost/m²
+                        </div>
+                        <div className="text-lg font-bold text-black">
+                          {panel.costPerSqm ? `${(panel.costPerSqm / 1000).toFixed(0)}k` : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="bg-white bg-opacity-20 rounded-lg p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-black font-medium">Efficiency:</span>
-                        <span className="text-black font-bold text-xl">{panel.efficiency}%</span>
+                        <span className="text-black font-medium">Installation Cost:</span>
+                        <span className="text-black font-bold">
+                          LKR {panel.costPerSqm ? panel.costPerSqm.toLocaleString() : 'N/A'}/m²
+                        </span>
                       </div>
                     </div>
                     

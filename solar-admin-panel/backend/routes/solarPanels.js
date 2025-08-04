@@ -1,4 +1,4 @@
-// routes/solarPanels.js
+// Updated routes/solarPanels.js
 const express = require('express');
 const router = express.Router();
 const SolarPanel = require('../models/SolarPanel');
@@ -13,16 +13,28 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get single solar panel by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const solarPanel = await SolarPanel.findById(req.params.id);
+    if (!solarPanel) {
+      return res.status(404).json({ message: 'Solar panel not found' });
+    }
+    res.json(solarPanel);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Create new solar panel
 router.post('/', async (req, res) => {
   try {
-    // Only extract name and efficiency from request body
-    const { name, efficiency } = req.body;
+    const { name, efficiency, costPerSqm } = req.body;
     
     // Validate required fields
-    if (!name || !efficiency) {
+    if (!name || !efficiency || !costPerSqm) {
       return res.status(400).json({ 
-        message: 'Panel name and efficiency are required' 
+        message: 'Panel name, efficiency, and cost per m² are required' 
       });
     }
 
@@ -33,9 +45,17 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Validate cost
+    if (costPerSqm <= 0) {
+      return res.status(400).json({ 
+        message: 'Cost per m² must be greater than 0' 
+      });
+    }
+
     const solarPanel = new SolarPanel({
       name: name.trim(),
-      efficiency: parseFloat(efficiency)
+      efficiency: parseFloat(efficiency),
+      costPerSqm: parseFloat(costPerSqm)
     });
     
     await solarPanel.save();
@@ -51,13 +71,12 @@ router.post('/', async (req, res) => {
 // Update solar panel
 router.put('/:id', async (req, res) => {
   try {
-    // Only extract name and efficiency from request body
-    const { name, efficiency } = req.body;
+    const { name, efficiency, costPerSqm } = req.body;
     
     // Validate required fields
-    if (!name || !efficiency) {
+    if (!name || !efficiency || !costPerSqm) {
       return res.status(400).json({ 
-        message: 'Panel name and efficiency are required' 
+        message: 'Panel name, efficiency, and cost per m² are required' 
       });
     }
 
@@ -68,12 +87,20 @@ router.put('/:id', async (req, res) => {
       });
     }
 
+    // Validate cost
+    if (costPerSqm <= 0) {
+      return res.status(400).json({ 
+        message: 'Cost per m² must be greater than 0' 
+      });
+    }
+
     const solarPanel = await SolarPanel.findByIdAndUpdate(
       req.params.id,
-      { 
-        name: name.trim(), 
+      {
+        name: name.trim(),
         efficiency: parseFloat(efficiency),
-        updatedAt: new Date() 
+        costPerSqm: parseFloat(costPerSqm),
+        updatedAt: new Date()
       },
       { new: true, runValidators: true }
     );

@@ -3,6 +3,8 @@ import { Zap, Sun, Moon } from 'lucide-react';
 import LocationSelection from './LocationSelection';
 import PanelConfiguration from './PanelConfiguration';
 import ResultsDisplay from './ResultsDisplay';
+import SolarPlans from './SolarPlans';
+import PDFReportGenerator from './PDFReportGenerator';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -13,6 +15,8 @@ const Calculator = () => {
   const [solarPanels, setSolarPanels] = useState([]);
   const [locationData, setLocationData] = useState(null);
   const [panelArea, setPanelArea] = useState('');
+  const [monthlyElectricityUnits, setMonthlyElectricityUnits] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState('');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -52,11 +56,25 @@ const Calculator = () => {
           _id: '1',
           name: 'Monocrystalline Panel A',
           efficiency: 22,
+          pricePerWatt: 150, // LKR per watt
+          warrantyYears: 25,
+          technology: 'Monocrystalline',
+          maxPowerOutput: 400,
+          dimensions: { length: 2, width: 1 },
+          area: 2.00,
+          manufacturer: 'Solar Tech Ltd'
         },
         {
           _id: '2',
           name: 'Polycrystalline Panel B',
           efficiency: 18,
+          pricePerWatt: 120, // LKR per watt
+          warrantyYears: 20,
+          technology: 'Polycrystalline',
+          maxPowerOutput: 350,
+          dimensions: { length: 2, width: 1 },
+          area: 2.00,
+          manufacturer: 'Green Energy Corp'
         }
       ]);
     }
@@ -238,7 +256,7 @@ const Calculator = () => {
             Solar Energy Calculator
           </h1>
           <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Calculate solar photovoltaic output and earnings using database location data
+            Calculate solar photovoltaic output, earnings, and explore Sri Lankan revenue plans
           </p>
           
           {/* Theme Toggle */}
@@ -283,6 +301,33 @@ const Calculator = () => {
           themeClasses={themeClasses}
           darkMode={darkMode}
         />
+
+        {/* Solar Plans Component */}
+        <SolarPlans 
+          results={results}
+          monthlyElectricityUnits={monthlyElectricityUnits}
+          setMonthlyElectricityUnits={setMonthlyElectricityUnits}
+          selectedPlan={selectedPlan}
+          setSelectedPlan={setSelectedPlan}
+          panelArea={panelArea}
+          selectedPanel={selectedPanel}
+          solarPanels={solarPanels}
+          themeClasses={themeClasses}
+          darkMode={darkMode}
+        />
+
+        {/* PDF Report Generator Component */}
+        {results && (
+          <PDFReportGenerator 
+            results={results}
+            selectedPlan={selectedPlan}
+            monthlyElectricityUnits={monthlyElectricityUnits}
+            solarPanels={solarPanels}
+            selectedPanel={selectedPanel}
+            panelArea={panelArea}
+            themeClasses={themeClasses}
+          />
+        )}
       </div>
     </div>
   );
