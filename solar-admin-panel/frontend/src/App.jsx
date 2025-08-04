@@ -8,6 +8,7 @@ import SolarPanels from './pages/admin/SolarPanels'
 import LocationData from './pages/admin/LocationData'
 import Analytics from './pages/admin/Analytics'
 import Calculations from './pages/Calculator/Calculator'
+import ElectricityRates from'./pages/admin/ElectricityRates'
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
           <Route path="locations" element={<LocationData />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="calculations" element={<Calculations />} />
+          <Route path="electricity-rates" element={<ElectricityRates />} />
         </Route>
       </Routes>
     </div>

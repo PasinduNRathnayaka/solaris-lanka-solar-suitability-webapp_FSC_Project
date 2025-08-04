@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Settings, Database, Calculator, MapPin, BarChart3, Users, ArrowLeft, Zap } from 'lucide-react';
+import { Settings, Database, Calculator, DollarSign, MapPin, BarChart3, Users, ArrowLeft, Zap } from 'lucide-react';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ const AdminLayout = () => {
     { id: 'model', label: 'Model Coefficients', icon: Calculator, path: '/admin/model' },
     { id: 'variables', label: 'Variables', icon: Database, path: '/admin/variables' },
     { id: 'solar-panels', label: 'Solar Panels', icon: Zap, path: '/admin/solar-panels' },
+    { id: 'electricity-rates', label: 'Electricity Rates', icon: DollarSign, path: '/admin/electricity-rates' },
     { id: 'locations', label: 'Location Data', icon: MapPin, path: '/admin/locations' },
     // { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     // { id: 'calculations', label: 'Calculations', icon: Users, path: '/admin/calculations' }
