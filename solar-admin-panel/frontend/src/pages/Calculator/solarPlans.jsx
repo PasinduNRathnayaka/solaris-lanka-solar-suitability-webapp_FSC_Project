@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, Zap, Download, Calculator, TrendingUp, AlertCircle } from 'lucide-react';
 
 const SolarPlans = ({ 
@@ -12,10 +12,69 @@ const SolarPlans = ({
   darkMode 
 }) => {
   const [selectedPlan, setSelectedPlan] = useState('net-accounting');
+  const [electricityRates, setElectricityRates] = useState([]);
+  const [loadingRates, setLoadingRates] = useState(true);
   
-  // CEB electricity rates (approximate)
-  const CEB_RATE_DOMESTIC = 25; // LKR per kWh for domestic users
+  // Default export rate
   const EXPORT_RATE = 22; // LKR per kWh for exported power
+  const API_URL = 'http://localhost:5000/api';
+
+  // Fetch electricity rates from admin panel
+  useEffect(() => {
+    const fetchElectricityRates = async () => {
+      try {
+        setLoadingRates(true);
+        const response = await fetch(`${API_URL}/electricity-rates`);
+        const data = await response.json();
+        setElectricityRates(data);
+      } catch (error) {
+        console.error('Error fetching electricity rates:', error);
+        // Set default rates if API fails
+        setElectricityRates([
+          { _id: '1', fromUnits: 0, toUnits: 30, ratePerKwh: 7.85, description: 'Domestic - 0-30 units' },
+          { _id: '2', fromUnits: 31, toUnits: 60, ratePerKwh: 10.75, description: 'Domestic - 31-60 units' },
+          { _id: '3', fromUnits: 61, toUnits: 90, ratePerKwh: 27.75, description: 'Domestic - 61-90 units' },
+          { _id: '4', fromUnits: 91, toUnits: 120, ratePerKwh: 32.00, description: 'Domestic - 91-120 units' },
+          { _id: '5', fromUnits: 121, toUnits: 180, ratePerKwh: 45.00, description: 'Domestic - 121-180 units' },
+          { _id: '6', fromUnits: 181, toUnits: 999999, ratePerKwh: 50.00, description: 'Domestic - Above 180 units' }
+        ]);
+      } finally {
+        setLoadingRates(false);
+      }
+    };
+
+    fetchElectricityRates();
+  }, []);
+
+  // Calculate electricity bill using tiered rates
+  const calculateElectricityBill = (units) => {
+    if (!units || units <= 0 || electricityRates.length === 0) return 0;
+
+    let totalBill = 0;
+    let remainingUnits = parseFloat(units);
+    
+    const sortedRates = [...electricityRates].sort((a, b) => a.fromUnits - b.fromUnits);
+    
+    for (const rate of sortedRates) {
+      if (remainingUnits <= 0) break;
+      
+      const tierMax = rate.toUnits === 999999 ? remainingUnits : rate.toUnits;
+      const tierUnits = Math.min(remainingUnits, tierMax - rate.fromUnits + 1);
+      
+      if (tierUnits > 0) {
+        totalBill += tierUnits * rate.ratePerKwh;
+        remainingUnits -= tierUnits;
+      }
+    }
+    
+    return totalBill;
+  };
+
+  // Calculate average rate for a given unit consumption
+  const calculateAverageRate = (units) => {
+    const bill = calculateElectricityBill(units);
+    return units > 0 ? bill / units : 0;
+  };
   
   const solarPlans = [
     {
@@ -75,12 +134,11 @@ const SolarPlans = ({
   };
 
   const calculatePlanBenefits = (plan) => {
-    if (!results || !monthlyElectricityUnits) return null;
+    if (!results || !monthlyElectricityUnits || electricityRates.length === 0) return null;
 
     const monthlyGeneration = parseFloat(results.absorbedEnergy.monthly);
     const monthlyConsumption = parseFloat(monthlyElectricityUnits);
-    const monthlyGenerationValue = monthlyGeneration * CEB_RATE_DOMESTIC;
-    const monthlyConsumptionCost = monthlyConsumption * CEB_RATE_DOMESTIC;
+    const monthlyConsumptionCost = calculateElectricityBill(monthlyConsumption);
 
     let monthlySavings = 0;
     let monthlyRevenue = 0;
@@ -89,7 +147,10 @@ const SolarPlans = ({
     switch (plan.id) {
       case 'net-metering':
         // Use solar first, excess carries forward (no immediate revenue)
-        monthlySavings = Math.min(monthlyGeneration, monthlyConsumption) * CEB_RATE_DOMESTIC;
+        const solarUsed = Math.min(monthlyGeneration, monthlyConsumption);
+        const remainingConsumption = Math.max(0, monthlyConsumption - monthlyGeneration);
+        const gridBill = calculateElectricityBill(remainingConsumption);
+        monthlySavings = monthlyConsumptionCost - gridBill;
         monthlyRevenue = 0;
         netBenefit = monthlySavings;
         break;
@@ -98,7 +159,14 @@ const SolarPlans = ({
         // Use solar first, sell excess
         const selfConsumed = Math.min(monthlyGeneration, monthlyConsumption);
         const excess = Math.max(0, monthlyGeneration - monthlyConsumption);
-        monthlySavings = selfConsumed * CEB_RATE_DOMESTIC;
+        const remainingUnits = Math.max(0, monthlyConsumption - monthlyGeneration);
+        
+        // Calculate savings from self-consumed solar
+        const originalBill = monthlyConsumptionCost;
+        const newBill = calculateElectricityBill(remainingUnits);
+        monthlySavings = originalBill - newBill;
+        
+        // Calculate revenue from excess
         monthlyRevenue = excess * EXPORT_RATE;
         netBenefit = monthlySavings + monthlyRevenue;
         break;
@@ -106,7 +174,7 @@ const SolarPlans = ({
       case 'net-plus':
         // Sell all solar, buy all consumption
         monthlyRevenue = monthlyGeneration * (EXPORT_RATE + 2); // Slightly higher rate for Net Plus
-        const electricityCost = monthlyConsumption * CEB_RATE_DOMESTIC;
+        const electricityCost = monthlyConsumptionCost;
         netBenefit = monthlyRevenue - electricityCost;
         monthlySavings = 0;
         break;
@@ -116,7 +184,8 @@ const SolarPlans = ({
       monthlySavings: monthlySavings.toFixed(2),
       monthlyRevenue: monthlyRevenue.toFixed(2),
       netBenefit: netBenefit.toFixed(2),
-      annualBenefit: (netBenefit * 12).toFixed(2)
+      annualBenefit: (netBenefit * 12).toFixed(2),
+      currentBill: monthlyConsumptionCost.toFixed(2)
     };
   };
 
@@ -152,6 +221,8 @@ const SolarPlans = ({
     const paybackPeriod = calculatePaybackPeriod(selectedPlanData);
     const selectedPanelData = solarPanels.find(p => p._id === selectedPanel);
     const costPerSqm = getSelectedPanelCost();
+    const currentBill = calculateElectricityBill(monthlyElectricityUnits);
+    const averageRate = calculateAverageRate(monthlyElectricityUnits);
 
     // Create PDF content
     const reportContent = `
@@ -163,6 +234,16 @@ Location: ${results?.location?.city}, ${results?.location?.district}, ${results?
 Solar Panel: ${selectedPanelData?.name || 'Default Panel'} (${selectedPanelData?.efficiency || 'N/A'}% efficiency)
 Installation Area: ${panelArea}m²
 Monthly Electricity Consumption: ${monthlyElectricityUnits} kWh
+
+=== ELECTRICITY BILLING ANALYSIS ===
+Current Monthly Bill: LKR ${currentBill.toFixed(2)}
+Average Rate: LKR ${averageRate.toFixed(2)}/kWh
+Annual Electricity Cost: LKR ${(currentBill * 12).toFixed(2)}
+
+Rate Structure Used:
+${electricityRates.map(rate => 
+  `- ${rate.fromUnits}-${rate.toUnits === 999999 ? '∞' : rate.toUnits} units: LKR ${rate.ratePerKwh}/kWh (${rate.description})`
+).join('\n')}
 
 === TECHNICAL ANALYSIS ===
 Daily PVOUT: ${results?.pvout?.daily} kWh/m²/day
@@ -204,8 +285,8 @@ Based on your electricity consumption and solar generation:
   return parseFloat(currentBenefits?.netBenefit || 0) > parseFloat(bestBenefits?.netBenefit || 0) ? plan : best;
 }, solarPlans[0]).name}
 
-This analysis is based on current CEB rates and installation costs from selected solar panel.
-Actual costs and benefits may vary based on specific circumstances.
+This analysis is based on current CEB tiered rates and installation costs from selected solar panel.
+Actual costs and benefits may vary based on specific circumstances and rate changes.
     `;
 
     // Create and download the PDF content as text file (for demo purposes)
@@ -232,6 +313,8 @@ Actual costs and benefits may vary based on specific circumstances.
 
   const selectedPanelData = getSelectedPanelData();
   const costPerSqm = getSelectedPanelCost();
+  const currentMonthlyBill = monthlyElectricityUnits ? calculateElectricityBill(monthlyElectricityUnits) : 0;
+  const averageRate = monthlyElectricityUnits ? calculateAverageRate(monthlyElectricityUnits) : 0;
 
   return (
     <div className="space-y-8">
@@ -259,6 +342,39 @@ Actual costs and benefits may vary based on specific circumstances.
           <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Check your electricity bill to find your average monthly consumption in kWh (units)
           </p>
+          
+          {/* Current Bill Display */}
+          {monthlyElectricityUnits && !loadingRates && (
+            <div className="mt-4 p-4 bg-blue-100 bg-opacity-20 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    LKR {currentMonthlyBill.toFixed(2)}
+                  </div>
+                  <div className="text-sm text-gray-600">Current Monthly Bill</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    LKR {averageRate.toFixed(2)}
+                  </div>
+                  <div className="text-sm text-gray-600">Average Rate/kWh</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    LKR {(currentMonthlyBill * 12).toFixed(2)}
+                  </div>
+                  <div className="text-sm text-gray-600">Annual Cost</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {loadingRates && (
+            <div className="mt-4 p-4 bg-yellow-500 bg-opacity-20 rounded-lg flex items-center">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
+              <span className="text-yellow-700">Loading electricity rates...</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -341,7 +457,7 @@ Actual costs and benefits may vary based on specific circumstances.
       </div>
 
       {/* Solar Revenue Plans */}
-      {monthlyElectricityUnits && (
+      {monthlyElectricityUnits && !loadingRates && (
         <div className={`rounded-3xl border shadow-2xl p-8 transition-all duration-300 ${themeClasses.card}`}>
           <h2 className="text-3xl font-bold mb-6 flex items-center">
             <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl mr-4">
@@ -402,43 +518,58 @@ Actual costs and benefits may vary based on specific circumstances.
                   <h3 className="text-2xl font-bold text-white mb-6">{plan.name} - Financial Analysis</h3>
                   
                   {benefits && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                      <div className="bg-white bg-opacity-20 rounded-xl p-4 text-center">
+                        <AlertCircle className="w-8 h-8 mx-auto mb-2 text-red-300" />
+                        <div className="text-xl font-bold text-black">LKR {benefits.currentBill}</div>
+                        <div className="text-black opacity-80 text-sm">Current Bill</div>
+                      </div>
+                      
                       <div className="bg-white bg-opacity-20 rounded-xl p-4 text-center">
                         <DollarSign className="w-8 h-8 mx-auto mb-2 text-green-300" />
-                        <div className="text-2xl font-bold text-black">LKR {benefits.monthlySavings}</div>
-                        <div className="text-black opacity-80">Monthly Savings</div>
+                        <div className="text-xl font-bold text-black">LKR {benefits.monthlySavings}</div>
+                        <div className="text-black opacity-80 text-sm">Monthly Savings</div>
                       </div>
                       
                       <div className="bg-white bg-opacity-20 rounded-xl p-4 text-center">
                         <TrendingUp className="w-8 h-8 mx-auto mb-2 text-blue-300" />
-                        <div className="text-2xl font-bold text-black">LKR {benefits.monthlyRevenue}</div>
-                        <div className="text-black opacity-80">Monthly Revenue</div>
+                        <div className="text-xl font-bold text-black">LKR {benefits.monthlyRevenue}</div>
+                        <div className="text-black opacity-80 text-sm">Monthly Revenue</div>
                       </div>
                       
                       <div className="bg-white bg-opacity-20 rounded-xl p-4 text-center">
                         <Calculator className="w-8 h-8 mx-auto mb-2 text-purple-300" />
-                        <div className="text-2xl font-bold text-black">LKR {benefits.netBenefit}</div>
-                        <div className="text-black opacity-80">Net Monthly Benefit</div>
+                        <div className="text-xl font-bold text-black">LKR {benefits.netBenefit}</div>
+                        <div className="text-black opacity-80 text-sm">Net Monthly Benefit</div>
                       </div>
                       
                       <div className="bg-white bg-opacity-20 rounded-xl p-4 text-center">
                         <Zap className="w-8 h-8 mx-auto mb-2 text-yellow-300" />
-                        <div className="text-2xl font-bold text-black">LKR {benefits.annualBenefit}</div>
-                        <div className="text-black opacity-80">Annual Benefit</div>
+                        <div className="text-xl font-bold text-black">LKR {benefits.annualBenefit}</div>
+                        <div className="text-black opacity-80 text-sm">Annual Benefit</div>
                       </div>
                     </div>
                   )}
                   
                   <div className="bg-white bg-opacity-20 rounded-xl p-6">
-                    <h4 className="font-bold text-black mb-4">Plan Benefits:</h4>
-                    <ul className="space-y-2">
-                      {plan.benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-center text-black">
-                          <div className="w-2 h-2 bg-green-300 rounded-full mr-3"></div>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
+                    <h4 className="font-bold text-black mb-4">Plan Benefits & Rate Structure:</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h5 className="font-semibold text-black mb-2">Benefits:</h5>
+                        <ul className="space-y-2">
+                          {plan.benefits.map((benefit, index) => (
+                            <li key={index} className="flex items-center text-black text-sm">
+                              <div className="w-2 h-2 bg-green-300 rounded-full mr-3"></div>
+                              {benefit}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        
+                      </div>
+                    </div>
+                    
                     <div className="mt-4 p-3 bg-black bg-opacity-30 rounded-lg">
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-white">Payback Period:</span>
@@ -501,7 +632,7 @@ Actual costs and benefits may vary based on specific circumstances.
       )}
 
       {/* Download Report Button */}
-      {monthlyElectricityUnits && (
+      {monthlyElectricityUnits && !loadingRates && (
         <div className="text-center">
           <button
             onClick={generatePDFReport}
@@ -511,10 +642,11 @@ Actual costs and benefits may vary based on specific circumstances.
             Download Analysis Report
           </button>
           <p className={`mt-3 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Get a comprehensive PDF report with all calculations and recommendations
+            Get a comprehensive report with tiered rate calculations and recommendations
           </p>
         </div>
       )}
+
     </div>
   );
 };
