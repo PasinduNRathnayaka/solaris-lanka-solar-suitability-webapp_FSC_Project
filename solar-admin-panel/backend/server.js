@@ -26,6 +26,7 @@ app.use('/api/variables', require('./routes/variables'));
 app.use('/api/locations', require('./routes/locations'));
 app.use('/api/solar-panels', require('./routes/solarPanels'));
 app.use('/api/calculations', require('./routes/calculations'));
+app.use('/api/electricity-rates', require('./routes/electricityRates'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

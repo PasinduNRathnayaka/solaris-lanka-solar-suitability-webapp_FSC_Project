@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, X, Zap, DollarSign, Award } from 'lucide-react';
+import { Plus, Edit3, Trash2, X, Zap, DollarSign } from 'lucide-react';
 
 const SolarPanels = () => {
   const [loading, setLoading] = useState(false);
@@ -7,18 +7,7 @@ const SolarPanels = () => {
   const [newSolarPanel, setNewSolarPanel] = useState({
     name: '',
     efficiency: '',
-    pricePerWatt: '150',
-    warrantyYears: '25',
-    manufacturer: '',
-    technology: 'Monocrystalline',
-    maxPowerOutput: '400',
-    dimensions: {
-      length: '2',
-      width: '1',
-      thickness: '0.04'
-    },
-    weight: '20',
-    temperatureCoefficient: '-0.4'
+    costPerSqm: '125000' // LKR per m²
   });
   const [showAddSolarPanel, setShowAddSolarPanel] = useState(false);
   const [editingSolarPanel, setEditingSolarPanel] = useState(null);
@@ -43,23 +32,12 @@ const SolarPanels = () => {
     setNewSolarPanel({
       name: '',
       efficiency: '',
-      pricePerWatt: '150',
-      warrantyYears: '25',
-      manufacturer: '',
-      technology: 'Monocrystalline',
-      maxPowerOutput: '400',
-      dimensions: {
-        length: '2',
-        width: '1',
-        thickness: '0.04'
-      },
-      weight: '20',
-      temperatureCoefficient: '-0.4'
+      costPerSqm: '125000'
     });
   };
 
   const addSolarPanel = async () => {
-    if (newSolarPanel.name && newSolarPanel.efficiency) {
+    if (newSolarPanel.name && newSolarPanel.efficiency && newSolarPanel.costPerSqm) {
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/solar-panels`, {
@@ -68,18 +46,7 @@ const SolarPanels = () => {
           body: JSON.stringify({
             name: newSolarPanel.name,
             efficiency: parseFloat(newSolarPanel.efficiency),
-            pricePerWatt: parseFloat(newSolarPanel.pricePerWatt),
-            warrantyYears: parseInt(newSolarPanel.warrantyYears),
-            manufacturer: newSolarPanel.manufacturer,
-            technology: newSolarPanel.technology,
-            maxPowerOutput: parseFloat(newSolarPanel.maxPowerOutput),
-            dimensions: {
-              length: parseFloat(newSolarPanel.dimensions.length),
-              width: parseFloat(newSolarPanel.dimensions.width),
-              thickness: parseFloat(newSolarPanel.dimensions.thickness)
-            },
-            weight: parseFloat(newSolarPanel.weight),
-            temperatureCoefficient: parseFloat(newSolarPanel.temperatureCoefficient)
+            costPerSqm: parseFloat(newSolarPanel.costPerSqm)
           })
         });
         
@@ -98,12 +65,12 @@ const SolarPanels = () => {
         setLoading(false);
       }
     } else {
-      alert('Please fill in the panel name and efficiency');
+      alert('Please fill in all required fields');
     }
   };
 
   const updateSolarPanel = async () => {
-    if (newSolarPanel.name && newSolarPanel.efficiency && editingSolarPanel) {
+    if (newSolarPanel.name && newSolarPanel.efficiency && newSolarPanel.costPerSqm && editingSolarPanel) {
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/solar-panels/${editingSolarPanel}`, {
@@ -112,18 +79,7 @@ const SolarPanels = () => {
           body: JSON.stringify({
             name: newSolarPanel.name,
             efficiency: parseFloat(newSolarPanel.efficiency),
-            pricePerWatt: parseFloat(newSolarPanel.pricePerWatt),
-            warrantyYears: parseInt(newSolarPanel.warrantyYears),
-            manufacturer: newSolarPanel.manufacturer,
-            technology: newSolarPanel.technology,
-            maxPowerOutput: parseFloat(newSolarPanel.maxPowerOutput),
-            dimensions: {
-              length: parseFloat(newSolarPanel.dimensions.length),
-              width: parseFloat(newSolarPanel.dimensions.width),
-              thickness: parseFloat(newSolarPanel.dimensions.thickness)
-            },
-            weight: parseFloat(newSolarPanel.weight),
-            temperatureCoefficient: parseFloat(newSolarPanel.temperatureCoefficient)
+            costPerSqm: parseFloat(newSolarPanel.costPerSqm)
           })
         });
         
@@ -143,7 +99,7 @@ const SolarPanels = () => {
         setLoading(false);
       }
     } else {
-      alert('Please fill in the panel name and efficiency');
+      alert('Please fill in all required fields');
     }
   };
 
@@ -173,24 +129,11 @@ const SolarPanels = () => {
     setNewSolarPanel({
       name: panel.name,
       efficiency: panel.efficiency.toString(),
-      pricePerWatt: panel.pricePerWatt?.toString() || '150',
-      warrantyYears: panel.warrantyYears?.toString() || '25',
-      manufacturer: panel.manufacturer || '',
-      technology: panel.technology || 'Monocrystalline',
-      maxPowerOutput: panel.maxPowerOutput?.toString() || '400',
-      dimensions: {
-        length: panel.dimensions?.length?.toString() || '2',
-        width: panel.dimensions?.width?.toString() || '1',
-        thickness: panel.dimensions?.thickness?.toString() || '0.04'
-      },
-      weight: panel.weight?.toString() || '20',
-      temperatureCoefficient: panel.temperatureCoefficient?.toString() || '-0.4'
+      costPerSqm: panel.costPerSqm?.toString() || '125000'
     });
     setEditingSolarPanel(panel._id);
     setShowAddSolarPanel(true);
   };
-
-  const technologies = ['Monocrystalline', 'Polycrystalline', 'Thin Film', 'Bifacial'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
@@ -229,12 +172,7 @@ const SolarPanels = () => {
                 </button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                {/* Basic Information */}
-                <div className="col-span-full">
-                  <h4 className="text-lg font-semibold text-white mb-4">Basic Information</h4>
-                </div>
-                
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Panel Name <span className="text-red-400">*</span>
@@ -266,180 +204,27 @@ const SolarPanels = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Technology
-                  </label>
-                  <select
-                    value={newSolarPanel.technology}
-                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, technology: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  >
-                    {technologies.map(tech => (
-                      <option key={tech} value={tech}>{tech}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Manufacturer
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., SunPower, LG, Panasonic"
-                    value={newSolarPanel.manufacturer}
-                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, manufacturer: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                {/* Technical Specifications */}
-                <div className="col-span-full mt-6">
-                  <h4 className="text-lg font-semibold text-white mb-4">Technical Specifications</h4>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Max Power Output (W)
+                    Installation Cost per m² (LKR) <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="number"
-                    placeholder="400"
-                    min="50"
-                    step="10"
-                    value={newSolarPanel.maxPowerOutput}
-                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, maxPowerOutput: e.target.value }))}
+                    placeholder="125000"
+                    min="50000"
+                    step="1000"
+                    value={newSolarPanel.costPerSqm}
+                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, costPerSqm: e.target.value }))}
                     className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Weight (kg)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="20"
-                    min="5"
-                    step="0.5"
-                    value={newSolarPanel.weight}
-                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, weight: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Temperature Coefficient (%/°C)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="-0.4"
-                    step="0.01"
-                    value={newSolarPanel.temperatureCoefficient}
-                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, temperatureCoefficient: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                {/* Dimensions */}
-                <div className="col-span-full mt-6">
-                  <h4 className="text-lg font-semibold text-white mb-4">Dimensions (meters)</h4>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Length (m)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="2"
-                    min="0.5"
-                    step="0.1"
-                    value={newSolarPanel.dimensions.length}
-                    onChange={(e) => setNewSolarPanel(prev => ({ 
-                      ...prev, 
-                      dimensions: { ...prev.dimensions, length: e.target.value }
-                    }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Width (m)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="1"
-                    min="0.5"
-                    step="0.1"
-                    value={newSolarPanel.dimensions.width}
-                    onChange={(e) => setNewSolarPanel(prev => ({ 
-                      ...prev, 
-                      dimensions: { ...prev.dimensions, width: e.target.value }
-                    }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Thickness (m)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0.04"
-                    min="0.01"
-                    step="0.001"
-                    value={newSolarPanel.dimensions.thickness}
-                    onChange={(e) => setNewSolarPanel(prev => ({ 
-                      ...prev, 
-                      dimensions: { ...prev.dimensions, thickness: e.target.value }
-                    }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                {/* Pricing & Warranty */}
-                <div className="col-span-full mt-6">
-                  <h4 className="text-lg font-semibold text-white mb-4">Pricing & Warranty</h4>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Price per Watt (LKR)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="150"
-                    min="50"
-                    step="5"
-                    value={newSolarPanel.pricePerWatt}
-                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, pricePerWatt: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Warranty (years)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="25"
-                    min="10"
-                    max="30"
-                    value={newSolarPanel.warrantyYears}
-                    onChange={(e) => setNewSolarPanel(prev => ({ ...prev, warrantyYears: e.target.value }))}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    Total installation cost including panels, inverter, mounting, permits
+                  </p>
                 </div>
               </div>
 
               <div className="flex space-x-4">
                 <button
                   onClick={editingSolarPanel ? updateSolarPanel : addSolarPanel}
-                  disabled={loading || !newSolarPanel.name || !newSolarPanel.efficiency}
+                  disabled={loading || !newSolarPanel.name || !newSolarPanel.efficiency || !newSolarPanel.costPerSqm}
                   className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105 disabled:hover:scale-100"
                 >
                   {loading ? 'Saving...' : (editingSolarPanel ? 'Update Panel' : 'Add Panel')}
@@ -471,7 +256,7 @@ const SolarPanels = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <Zap className="w-6 h-6 text-yellow-300" />
-                      <span className="text-sm text-orange-200">{panel.technology}</span>
+                      <span className="text-sm text-orange-200">Solar Panel</span>
                     </div>
                     <div className="flex space-x-2">
                       <button
@@ -494,12 +279,6 @@ const SolarPanels = () => {
                       {panel.name}
                     </h3>
                     
-                    {panel.manufacturer && (
-                      <p className="text-sm text-orange-200">
-                        by {panel.manufacturer}
-                      </p>
-                    )}
-                    
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
                         <div className="text-sm text-black font-medium">Efficiency</div>
@@ -507,39 +286,23 @@ const SolarPanels = () => {
                       </div>
                       
                       <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-                        <div className="text-sm text-black font-medium">Power</div>
-                        <div className="text-lg font-bold text-black">{panel.maxPowerOutput}W</div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-                        <div className="text-xs text-black font-medium">Area</div>
-                        <div className="text-sm font-bold text-black">{panel.area?.toFixed(2)}m²</div>
-                      </div>
-                      
-                      <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-                        <div className="text-xs text-black font-medium flex items-center justify-center">
-                          <Award className="w-3 h-3 mr-1" />
-                          Warranty
+                        <div className="text-sm text-black font-medium flex items-center justify-center">
+                          <DollarSign className="w-3 h-3 mr-1" />
+                          Cost/m²
                         </div>
-                        <div className="text-sm font-bold text-black">{panel.warrantyYears}y</div>
+                        <div className="text-lg font-bold text-black">
+                          {panel.costPerSqm ? `${(panel.costPerSqm / 1000).toFixed(0)}k` : 'N/A'}
+                        </div>
                       </div>
                     </div>
 
                     <div className="bg-white bg-opacity-20 rounded-lg p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-black font-medium flex items-center">
-                          <DollarSign className="w-4 h-4 mr-1" />
-                          Price:
+                        <span className="text-black font-medium">Installation Cost:</span>
+                        <span className="text-black font-bold">
+                          LKR {panel.costPerSqm ? panel.costPerSqm.toLocaleString() : 'N/A'}/m²
                         </span>
-                        <span className="text-black font-bold">LKR {panel.pricePerWatt}/W</span>
                       </div>
-                      {panel.pricePerSqm && (
-                        <div className="text-xs text-black mt-1">
-                          ~LKR {panel.pricePerSqm.toFixed(0)}/m²
-                        </div>
-                      )}
                     </div>
                     
                     <div className="text-xs text-orange-200 mt-4">
