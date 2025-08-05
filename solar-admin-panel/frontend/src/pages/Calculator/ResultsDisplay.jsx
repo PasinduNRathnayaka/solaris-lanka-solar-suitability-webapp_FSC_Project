@@ -196,13 +196,13 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Cost per m²</p>
-                <p className="text-lg font-bold">LKR {results.solarPanel.costPerSqm.toLocaleString()}</p>
+              <div className="p-4 bg-gray-50 dark:bg-gray-600 rounded-lg">
+                <p className="text-sm text-gray-100 dark:text-gray-100">Cost per m²</p>
+                <p className="text-lg font-bold text-white">LKR {results.solarPanel.costPerSqm.toLocaleString()}</p>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Area Coverage</p>
-                <p className="text-lg font-bold">{results.panelArea} m²</p>
+              <div className="p-4 bg-gray-50 dark:bg-gray-600 rounded-lg">
+                <p className="text-sm text-gray-100 dark:text-gray-100">Area Coverage</p>
+                <p className="text-lg font-bold text-white">{results.panelArea} m²</p>
               </div>
             </div>
           </div>
