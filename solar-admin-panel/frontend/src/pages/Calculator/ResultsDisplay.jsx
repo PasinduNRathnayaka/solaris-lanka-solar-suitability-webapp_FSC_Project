@@ -121,7 +121,7 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
             <div className="flex justify-between items-center p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Annual PVOUT</p>
-                <p className="text-2xl font-bold text-red-600">{results.pvout.annual}</p>
+                <p className="text-2xl font-bold text-red-600">{(results.pvout.annual)*365}</p>
               </div>
               <p className="text-sm text-gray-500">kWh/m²/year</p>
             </div>
