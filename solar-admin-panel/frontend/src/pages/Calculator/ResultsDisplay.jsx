@@ -129,7 +129,7 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
         </div>
 
         {/* Energy Production Section */}
-        <div className={`rounded-2xl border shadow-xl p-6 ${themeClasses.card}`}>
+        {/* <div className={`rounded-2xl border shadow-xl p-6 ${themeClasses.card}`}>
           <div className="flex items-center mb-6">
             <div className="p-3 bg-blue-500 rounded-lg mr-4">
               <Battery className="w-6 h-6 text-white" />
@@ -165,12 +165,12 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
               <p className="text-sm text-gray-500">kWh/year</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
-      </div>
+      {/* </div> */}
 
       {/* Financial Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"> */}
         
         {/* Installation Cost */}
         <div className={`rounded-2xl border shadow-xl p-6 ${themeClasses.card}`}>
@@ -209,7 +209,7 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
         </div>
 
         {/* Basic Financial Returns */}
-        <div className={`rounded-2xl border shadow-xl p-6 ${themeClasses.card}`}>
+        {/* <div className={`rounded-2xl border shadow-xl p-6 ${themeClasses.card}`}>
           <div className="flex items-center mb-6">
             <div className="p-3 bg-green-500 rounded-lg mr-4">
               <TrendingUp className="w-6 h-6 text-white" />
@@ -245,7 +245,7 @@ const ResultsDisplay = ({ results, themeClasses, darkMode }) => {
               <p className="text-sm text-gray-500">per year</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
       </div>
 
