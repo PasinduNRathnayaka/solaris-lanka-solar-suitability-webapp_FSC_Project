@@ -413,98 +413,98 @@ Monthly Consumption: ${monthlyElectricityUnits} kWh
     return null;
   }
 
-  return (
-    <div className={`rounded-3xl border shadow-2xl p-8 transition-all duration-300 ${themeClasses.card}`}>
-      <h2 className="text-3xl font-bold mb-6 flex items-center">
-        <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl mr-4">
-          <FileText className="w-8 h-8 text-white" />
-        </div>
-        Download Analysis Reports
-      </h2>
+  // return (
+  //   <div className={`rounded-3xl border shadow-2xl p-8 transition-all duration-300 ${themeClasses.card}`}>
+  //     <h2 className="text-3xl font-bold mb-6 flex items-center">
+  //       <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl mr-4">
+  //         <FileText className="w-8 h-8 text-white" />
+  //       </div>
+  //       Download Analysis Reports
+  //     </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Detailed Report */}
-        <div className={`rounded-2xl p-6 border ${themeClasses.card}`}>
-          <div className="flex items-center mb-4">
-            <Download className="w-8 h-8 text-blue-500 mr-3" />
-            <h3 className="text-xl font-bold">Comprehensive Report</h3>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Complete 25+ page analysis including technical specifications, financial projections, 
-            environmental impact, maintenance schedules, and regulatory compliance information.
-          </p>
-          <ul className="text-sm space-y-1 mb-6">
-            <li className="flex items-center">
-              <Calculator className="w-4 h-4 mr-2 text-green-500" />
-              Detailed financial analysis
-            </li>
-            <li className="flex items-center">
-              <Zap className="w-4 h-4 mr-2 text-yellow-500" />
-              25-year performance projections
-            </li>
-            <li className="flex items-center">
-              <DollarSign className="w-4 h-4 mr-2 text-green-500" />
-              Solar plans comparison
-            </li>
-            <li className="flex items-center">
-              <MapPin className="w-4 h-4 mr-2 text-blue-500" />
-              Location-specific analysis
-            </li>
-          </ul>
-          <button
-            onClick={generateDetailedReport}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105"
-          >
-            Download Detailed Report
-          </button>
-        </div>
+  //     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  //       {/* Detailed Report */}
+  //       <div className={`rounded-2xl p-6 border ${themeClasses.card}`}>
+  //         <div className="flex items-center mb-4">
+  //           <Download className="w-8 h-8 text-blue-500 mr-3" />
+  //           <h3 className="text-xl font-bold">Comprehensive Report</h3>
+  //         </div>
+  //         <p className="text-gray-600 dark:text-gray-400 mb-4">
+  //           Complete 25+ page analysis including technical specifications, financial projections, 
+  //           environmental impact, maintenance schedules, and regulatory compliance information.
+  //         </p>
+  //         <ul className="text-sm space-y-1 mb-6">
+  //           <li className="flex items-center">
+  //             <Calculator className="w-4 h-4 mr-2 text-green-500" />
+  //             Detailed financial analysis
+  //           </li>
+  //           <li className="flex items-center">
+  //             <Zap className="w-4 h-4 mr-2 text-yellow-500" />
+  //             25-year performance projections
+  //           </li>
+  //           <li className="flex items-center">
+  //             <DollarSign className="w-4 h-4 mr-2 text-green-500" />
+  //             Solar plans comparison
+  //           </li>
+  //           <li className="flex items-center">
+  //             <MapPin className="w-4 h-4 mr-2 text-blue-500" />
+  //             Location-specific analysis
+  //           </li>
+  //         </ul>
+  //         <button
+  //           onClick={generateDetailedReport}
+  //           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105"
+  //         >
+  //           Download Detailed Report
+  //         </button>
+  //       </div>
 
-        {/* Quick Summary */}
-        <div className={`rounded-2xl p-6 border ${themeClasses.card}`}>
-          <div className="flex items-center mb-4">
-            <FileText className="w-8 h-8 text-green-500 mr-3" />
-            <h3 className="text-xl font-bold">Quick Summary</h3>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Concise 1-page summary with key metrics, energy production estimates, 
-            and basic financial returns for quick reference.
-          </p>
-          <ul className="text-sm space-y-1 mb-6">
-            <li className="flex items-center">
-              <Zap className="w-4 h-4 mr-2 text-yellow-500" />
-              Energy production summary
-            </li>
-            <li className="flex items-center">
-              <DollarSign className="w-4 h-4 mr-2 text-green-500" />
-              Cost and benefit overview
-            </li>
-            <li className="flex items-center">
-              <Calendar className="w-4 h-4 mr-2 text-blue-500" />
-              Key project details
-            </li>
-          </ul>
-          <button
-            onClick={generateQuickSummary}
-            className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105"
-          >
-            Download Quick Summary
-          </button>
-        </div>
-      </div>
+  //       {/* Quick Summary */}
+  //       <div className={`rounded-2xl p-6 border ${themeClasses.card}`}>
+  //         <div className="flex items-center mb-4">
+  //           <FileText className="w-8 h-8 text-green-500 mr-3" />
+  //           <h3 className="text-xl font-bold">Quick Summary</h3>
+  //         </div>
+  //         <p className="text-gray-600 dark:text-gray-400 mb-4">
+  //           Concise 1-page summary with key metrics, energy production estimates, 
+  //           and basic financial returns for quick reference.
+  //         </p>
+  //         <ul className="text-sm space-y-1 mb-6">
+  //           <li className="flex items-center">
+  //             <Zap className="w-4 h-4 mr-2 text-yellow-500" />
+  //             Energy production summary
+  //           </li>
+  //           <li className="flex items-center">
+  //             <DollarSign className="w-4 h-4 mr-2 text-green-500" />
+  //             Cost and benefit overview
+  //           </li>
+  //           <li className="flex items-center">
+  //             <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+  //             Key project details
+  //           </li>
+  //         </ul>
+  //         <button
+  //           onClick={generateQuickSummary}
+  //           className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105"
+  //         >
+  //           Download Quick Summary
+  //         </button>
+  //       </div>
+  //     </div>
 
-      <div className="bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900 rounded-xl p-6">
-        <div className="flex items-center mb-3">
-          <FileText className="w-6 h-6 text-orange-600 mr-2" />
-          <h4 className="font-bold text-orange-800 dark:text-orange-200">Report Information</h4>
-        </div>
-        <p className="text-orange-700 dark:text-orange-300 text-sm">
-          These reports are generated based on current data and industry standards. 
-          For official project proposals and financing applications, please consult with 
-          certified solar installation professionals and financial advisors.
-        </p>
-      </div>
-    </div>
-  );
+  //     <div className="bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900 rounded-xl p-6">
+  //       <div className="flex items-center mb-3">
+  //         <FileText className="w-6 h-6 text-orange-600 mr-2" />
+  //         <h4 className="font-bold text-orange-800 dark:text-orange-200">Report Information</h4>
+  //       </div>
+  //       <p className="text-orange-700 dark:text-orange-300 text-sm">
+  //         These reports are generated based on current data and industry standards. 
+  //         For official project proposals and financing applications, please consult with 
+  //         certified solar installation professionals and financial advisors.
+  //       </p>
+  //     </div>
+  //   </div>
+  // );
 };
 
 export default PDFReportGenerator;
