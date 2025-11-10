@@ -385,7 +385,7 @@ const LocationData = () => {
                 <div className="bg-gradient-to-br from-green-600 to-teal-600 rounded-xl p-6 mb-6">
                   <h4 className="text-xl font-semibold text-white mb-4">Final PVOUT Result</h4>
                   <div className="text-4xl font-bold text-white mb-2">
-                    {calculatePVOUT().toFixed(3)} kWh/m²/year
+                    {calculatePVOUT().toFixed(3)} kWh/m²/day
                   </div>
                   <p className="text-white text-opacity-80">
                     Photovoltaic Power Output for {selectedLocation.city}, {selectedLocation.district}
