@@ -64,8 +64,8 @@ router.post('/calculate', async (req, res) => {
     });
     
     // Convert annual PVOUT to different time periods
-    const dailyPvout = annualPvout / 365;
-    const monthlyPvout = annualPvout / 12;
+    const dailyPvout = annualPvout;
+    const monthlyPvout = dailyPvout * 30;
     
     // Calculate energy production using panel area and efficiency
     const efficiency = solarPanel.efficiency / 100;
